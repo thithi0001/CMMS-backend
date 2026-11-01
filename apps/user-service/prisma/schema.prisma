@@ -1,0 +1,127 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/prisma/generated"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model departments {
+  id         Int         @id @default(autoincrement())
+  name       String      @db.VarChar(50)
+  code       String      @unique @db.VarChar(20)
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?   @default(now()) @db.Timestamptz(6)
+  employees  employees[]
+}
+
+model employees {
+  id            Int         @id @default(autoincrement())
+  user_id       Int
+  department_id Int
+  position      String?     @db.VarChar(50)
+  start_date    DateTime    @db.Date
+  end_date      DateTime?   @db.Date
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  departments   departments @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([department_id], map: "idx_employees_department_id")
+  @@index([user_id], map: "idx_employees_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model expertises {
+  id                   Int                    @id @default(autoincrement())
+  category_id          Int
+  category_name        String?                @db.VarChar(50)
+  category_code        String?                @db.VarChar(20)
+  description          String?
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  technician_expertise technician_expertise[]
+
+  @@index([category_code], map: "idx_expertises_category_code")
+}
+
+model outbox_events {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type    String        @db.VarChar(100)
+  resource      String        @db.VarChar(100)
+  record_id     Int
+  payload       Json
+  status        event_status? @default(pending)
+  retry_count   Int           @default(0)
+  occurred_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  published_at  DateTime?     @db.Timestamptz(6)
+  next_retry_at DateTime?     @db.Timestamptz(6)
+  last_error    String?
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+
+  @@index([status, next_retry_at], map: "idx_outbox_events_pending", where: raw("(status = 'pending'::event_status)"))
+}
+
+model password_reset_requests {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  otp_hash        String    @db.VarChar(255)
+  expires_at      DateTime  @db.Timestamptz(6)
+  used_at         DateTime? @db.Timestamptz(6)
+  failed_attempts Int       @default(0)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  users           users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_password_reset_requests_user_id")
+}
+
+model roles {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(50)
+  code        String    @unique @db.VarChar(20)
+  description String?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  users       users[]
+}
+
+model technician_expertise {
+  user_id      Int
+  expertise_id Int
+  created_at   DateTime?  @default(now()) @db.Timestamptz(6)
+  expertises   expertises @relation(fields: [expertise_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users        users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([user_id, expertise_id])
+  @@index([expertise_id], map: "idx_technician_expertise_expertise_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                      Int                       @id @default(autoincrement())
+  username                String                    @unique @db.VarChar(20)
+  hashed_password         String                    @db.VarChar(255)
+  email                   String                    @unique @db.VarChar(255)
+  role_id                 Int
+  is_active               Boolean                   @default(true)
+  google_sub              String?                   @unique @db.VarChar(255)
+  fullname                String?                   @db.VarChar(50)
+  dob                     DateTime?                 @db.Date
+  phone                   String?                   @db.VarChar(15)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  employees               employees[]
+  password_reset_requests password_reset_requests[]
+  technician_expertise    technician_expertise[]
+  roles                   roles                     @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([role_id], map: "idx_users_role_id")
+}
+
+enum event_status {
+  pending
+  published
+}
