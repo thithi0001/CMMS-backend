@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 export interface EventEnvelope<T = unknown> {
   eventId: string;
