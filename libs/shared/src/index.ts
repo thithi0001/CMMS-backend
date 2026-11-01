@@ -7,7 +7,7 @@ export * from './types/jwt-payload';
 export * from './types/pagination';
 
 // Contracts: bỏ comment từng dòng khi dựng service tương ứng
-// export * from './contracts/user';
+export * from './contracts/user';
 // export * from './contracts/device';
 // export * from './contracts/maintenance';
 // export * from './contracts/inventory';

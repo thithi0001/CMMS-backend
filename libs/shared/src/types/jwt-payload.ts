@@ -1,8 +1,9 @@
 import { Role } from './role';
 
 export interface JwtPayload {
-  sub: string;       // userId
+  sub: number;       // userId
   username: string;
+  roleId: number;
   role: Role;
   iat?: number;
   exp?: number;

@@ -6,7 +6,7 @@ export interface EventEnvelope<T = unknown> {
   type: string;
   source: string;
   occurredAt: string;
-  actorId?: string;
+  actorId?: number;
   data: T;
 }
 
@@ -14,7 +14,7 @@ export function buildEvent<T>(params: {
   type: string;
   source: string;
   data: T;
-  actorId?: string;
+  actorId?: number;
   correlationId?: string;
 }): EventEnvelope<T> {
   return {
