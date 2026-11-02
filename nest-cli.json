@@ -97,8 +97,7 @@
       "entryFile": "main",
       "sourceRoot": "apps/user-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/user-service/tsconfig.app.json",
-        "webpack": false
+        "tsConfigPath": "apps/user-service/tsconfig.app.json"
       }
     }
   }
