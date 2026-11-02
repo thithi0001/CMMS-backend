@@ -14,7 +14,7 @@ export interface UserView {
 }
 
 export interface LoginResult {
-    accessToke: string;
+    accessToken: string;
     user: UserView;
 }
 
