@@ -4,6 +4,7 @@ import { USER_CMD } from "@app/shared";
 import type { 
     LoginDto, 
     ChangePasswordMsg ,
+    RefreshTokenDto,
 } from "@app/shared";
 import { AuthService } from "./auth.service";
 
@@ -16,6 +17,11 @@ export class AuthController {
     @MessagePattern(USER_CMD.LOGIN)
     login(@Payload() dto: LoginDto) {
         return this.auth.login(dto);
+    }
+
+    @MessagePattern(USER_CMD.REFRESH_TOKEN)
+    refreshToken(@Payload() dto: RefreshTokenDto) {
+        return this.auth.refreshToken(dto.refreshToken);
     }
 
     @MessagePattern(USER_CMD.CHANGE_PASSWORD)

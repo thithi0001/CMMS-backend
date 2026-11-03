@@ -15,7 +15,13 @@ export interface UserView {
 
 export interface LoginResult {
     accessToken: string;
+    refreshToken: string;
     user: UserView;
+}
+
+export interface RefreshTokenResult {
+    accessToken: string;
+    refreshToken: string;
 }
 
 export interface UserStats {

@@ -57,6 +57,10 @@ export class LoginDto {
     @IsString() @IsNotEmpty() password!: string;
 }
 
+export class RefreshTokenDto {
+    @IsString() @IsNotEmpty() refreshToken!: string;
+}
+
 export class UpdateUserDto {
     @IsString() @IsOptional() fullname?: string;
     @IsString() @IsOptional() phone?: string;

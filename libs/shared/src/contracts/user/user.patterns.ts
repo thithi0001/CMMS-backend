@@ -1,6 +1,7 @@
 export const USER_CMD = {
     CREATE: 'cmd.user.create',
     LOGIN: 'cmd.user.login',
+    REFRESH_TOKEN: 'cmd.user.refresh_token',
     CHANGE_PASSWORD: 'cmd.user.change_password',
     FORGET_PASSWORD: 'cmd.user.forget_password',
     FIND_ALL: 'cmd.user.find_all',
