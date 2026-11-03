@@ -21,15 +21,8 @@ export class CreateUserDto {
     @IsEmail()
     email!: string;
 
-    @IsInt()
-    @Min(1)
-    @Max(4)
-    // @IsOptional()
-    roleId!: number;
-
-    // @IsIn(Object.values(Role))
-    // @IsOptional()
-    // role?: Role;
+    @IsIn(Object.values(Role))
+    roleCode!: Role;
 
     @IsString()
     @IsNotEmpty()
@@ -77,15 +70,8 @@ export class UpdateUserDto {
 }
 
 export class UpdateRoleDto {
-    @IsInt()
-    @Min(1)
-    @Max(4)
-    // @IsOptional()
-    roleId!: number;
-
-    // @IsIn(Object.values(Role))
-    // @IsOptional()
-    // role?: Role;
+    @IsIn(Object.values(Role))
+    roleCode!: Role;
 }
 
 export class ChangePasswordDto {
@@ -113,10 +99,6 @@ export class FindUserQueryDto {
     
     @IsOptional() @IsString() search?: string;
     @IsOptional()
-    @IsInt()
-    @Min(1)
-    @Max(4)
-    roleId?: number;
-
-    // @IsOptional() @IsIn(Object.values(Role)) role?: Role;
+    @IsIn(Object.values(Role))
+    roleCode?: Role;
 }

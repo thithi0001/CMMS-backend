@@ -28,7 +28,7 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
         this.publish<UserEventPayload>(USER_EVT.CREATED, {
             userId: u.id,
             username: u.username,
-            roleId: u.roleId
+            roleId: u.role.id
         }, actorId);
     }
 
@@ -65,7 +65,7 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
         this.publish<UserEventPayload>(USER_EVT.DEACTIVATED, {
             userId: u.id,
             username: u.username,
-            roleId: u.roleId,
+            roleId: u.role.id,
         }, actorId);
     }
 }

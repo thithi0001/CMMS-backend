@@ -24,20 +24,32 @@ export class UsersService {
     // === Nội bộ ===
     findUserByUserName(username: string) {
         return this.prisma.users.findUnique({
-            where: { username }
+            where: { username },
+            include: { roles: true },
         });
     }
 
     findUserByEmail(email: string) {
         return this.prisma.users.findUnique({
-            where: { email }
+            where: { email },
+            include: { roles: true },
         });
     }
 
     findUserById(id: number) {
         return this.prisma.users.findUnique({
-            where: { id }
+            where: { id },
+            include: { roles: true },
         });
+    }
+
+    async resolveRole(roleCode: Role) {
+        const role = await this.prisma.roles.findUnique({
+            where: { code: roleCode },
+        });
+        if (!role)
+            throw new NotFoundException('Role not found');
+        return role;
     }
 
     setPassword(id: number, hashedPassword: string) {
@@ -50,6 +62,7 @@ export class UsersService {
     async createUser(dto: CreateUserDto): Promise<UserView> {
         const username = dto.username.toLowerCase();
         const email = dto.email.toLowerCase();
+        const role = await this.resolveRole(dto.roleCode);
 
         if (await this.prisma.users.findUnique({ where: { username }})) {
             throw new ConflictException('Username exsisted');
@@ -65,11 +78,12 @@ export class UsersService {
                 username,
                 hashed_password: await bcrypt.hash(dto.password, 12),
                 email,
-                role_id: dto.roleId,
+                role_id: role.id,
                 fullname: dto.fullname,
                 dob: dto.dob,
                 phone: dto.phone,
-            }
+            },
+            include: { roles: true },
         });
 
         return toUserView(user);
@@ -85,8 +99,9 @@ export class UsersService {
     async findAll(q: FindUserQueryDto): Promise<Paginated<UserView>> {
         const page = q.page ?? 1;
         const limit = q.limit ?? 20;
+        const role = q.roleCode ? await this.resolveRole(q.roleCode) : undefined;
         const where: Prisma.usersWhereInput = {
-            ...(q.roleId && { role_id: q.roleId }),
+            ...(role && { role_id: role.id }),
             ...(q.search && {
                 OR: [
                     { username: { contains: q.search, mode: 'insensitive' }},
@@ -99,6 +114,7 @@ export class UsersService {
         const [items, total] = await this.prisma.$transaction([
             this.prisma.users.findMany({
                 where,
+                include: { roles: true },
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { created_at: 'desc' },
@@ -117,8 +133,7 @@ export class UsersService {
     }
 
     async update({ id, data, actor }: UpdateUserMsg): Promise<UserView> {
-        // 1 = ADMIN
-        if (actor.roleId !== 1 && actor.sub !== id) {
+        if (actor.roleCode !== Role.ADMIN && actor.sub !== id) {
             throw new ForbiddenException('Forbid to update this user')
         }
 
@@ -137,6 +152,7 @@ export class UsersService {
         const user = await this.prisma.users.update({
             where: { id },
             data: patch,
+            include: { roles: true },
         });
 
         if (changedFields.length)
@@ -145,8 +161,8 @@ export class UsersService {
 
     }
 
-    async updateRole({ id, roleId, actor }: UpdateRoleMsg): Promise<UserView> {
-        if (actor.roleId !== 1)
+    async updateRole({ id, roleCode, actor }: UpdateRoleMsg): Promise<UserView> {
+        if (actor.roleCode !== Role.ADMIN)
             throw new ForbiddenException('ADMIN only');
         if (actor.sub === id)
             throw new ForbiddenException('Cannot change your own role');
@@ -154,19 +170,21 @@ export class UsersService {
         const current = await this.findUserById(id);
         if (!current)
             throw new NotFoundException('User not found');
+        const role = await this.resolveRole(roleCode);
 
         const user = await this.prisma.users.update({
             where: { id },
-            data: { role_id: roleId},
+            data: { role_id: role.id },
+            include: { roles: true },
         });
 
-        if (current.role_id !== roleId)
-            this.events.roleChanged(id, current.role_id, roleId, actor.sub);
+        if (current.role_id !== role.id)
+            this.events.roleChanged(id, current.role_id, role.id, actor.sub);
         return toUserView(user);
     }
 
     async deactivate({ id, actor }: DeactivateUserMsg): Promise<UserView> {
-        if (actor.roleId !== 1)
+        if (actor.roleCode !== Role.ADMIN)
             throw new ForbiddenException('ADMIN only');
         if (actor.sub === id)
             throw new ForbiddenException('Cannot deactivate yourselve');
@@ -175,6 +193,7 @@ export class UsersService {
         const user = await this.prisma.users.update({
             where: { id },
             data: { is_active: false },
+            include: { roles: true },
         });
         const view = toUserView(user);
         this.events.deactivated(view, actor.sub);

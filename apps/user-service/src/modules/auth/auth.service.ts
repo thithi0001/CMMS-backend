@@ -48,6 +48,7 @@ export class AuthService {
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
+            roleCode: user.roles.code as Role,
         };
         const { accessToken, refreshToken } = await this.generateTokens(payload);
         const view = toUserView(user);
@@ -84,6 +85,7 @@ export class AuthService {
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
+            roleCode: user.roles.code as Role,
         });
     }
 

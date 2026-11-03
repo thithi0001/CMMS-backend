@@ -1,10 +1,16 @@
 import { Role } from "@app/shared/types/role";
 
+export interface RoleView {
+    id: number;
+    code: Role;
+    name: string;
+}
+
 export interface UserView {
     id: number;
     username: string;
     email: string;
-    roleId: number;
+    role: RoleView;
     isActive: boolean;
     fullname: string;
     dob: string;
