@@ -63,7 +63,7 @@ export class UsersController {
         return this.bus.send<UserView, UpdateRoleMsg>(
             USER_CMD.UPDATE_ROLE, {
                 id,
-                roleId: dto.roleId,
+                roleCode: dto.roleCode,
                 actor,
             }
         )
