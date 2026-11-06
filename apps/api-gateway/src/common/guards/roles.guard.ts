@@ -19,7 +19,7 @@ export class RolesGuard implements CanActivate {
         if (!roles?.length) return true;
 
         const user: JwtPayload | undefined = context.switchToHttp().getRequest().user;
-        if (!user || !roles.includes(user.role)) {
+        if (!user || !roles.includes(user.roleCode)) {
             throw new ForbiddenException('Unauthorized action');
         }
 
