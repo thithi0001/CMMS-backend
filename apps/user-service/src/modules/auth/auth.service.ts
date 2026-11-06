@@ -8,8 +8,8 @@ import {
     RefreshTokenResult,
     Role, UserView,
 } from "@app/shared";
-import { UserEventsPublisher } from "../../messaging/user-events.publisher";
-import { toUserView } from "../users/users.mapper";
+import { UserEventsPublisher } from "../../messaging/publishers/user-events.publisher";
+import { toUserView } from "../views.mapper";
 import { UsersService } from "../users/users.service";
 
 @Injectable()
@@ -128,7 +128,7 @@ export class AuthService {
         };
     }
 
-    async forgetPassword() {
+    async forgetPassword({ actorId, dto }: any) {
         return {
             message: 'Password reset successfully'
         };

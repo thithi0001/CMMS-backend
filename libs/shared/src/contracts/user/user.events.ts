@@ -23,10 +23,33 @@ export interface UserUpdatedPayload {
 
 export interface UserRoleChangedPayload {
     userId: number;
-    oldRole: number;
-    newRole: number;
+    oldRole: string;
+    newRole: string;
 }
 
 export interface UserPasswordChangedPayload {
     userId: number;
+}
+
+export interface DepartmentEventPayload {
+    departmentId: number;
+    departmentCode: string;
+    departmentName: string;
+}
+
+export interface EmployeeEventPayload {
+    employeeId: number;
+    userId: number;
+    departmentId: number;
+    position: string;
+    startDate: string;
+    endDate?: string;
+}
+
+export interface ExpertiseEventPayload {
+    userId?: number;
+    expertiseId: number;
+    expertiseCode?: string;
+    assignedAt?: string;
+    revokedAt?: string;
 }

@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule } from '@nestjs/microservices';
 import { BUS_CLIENT, busClientOptions } from '@app/shared';
-import { UserEventsPublisher } from './user-events.publisher';
+import { UserEventsPublisher } from './publishers/user-events.publisher';
 
 @Global()
 @Module({

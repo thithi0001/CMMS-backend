@@ -10,14 +10,19 @@ import {
 export class UserEventsPublisher implements OnApplicationBootstrap {
     private readonly logger = new Logger(UserEventsPublisher.name);
 
-    constructor(@Inject(BUS_CLIENT) private readonly bus: ClientProxy) {}
+    constructor(
+        @Inject(BUS_CLIENT) 
+        private readonly bus: ClientProxy
+    ) {}
 
     async onApplicationBootstrap() {
         await this.bus.connect();
     }
     
     private publish<T>(type: string, data: T, actorId?: number) {
-        const event = buildEvent({ type, source: SERVICES.USER, data, actorId });
+        const event = buildEvent({ 
+            type, source: SERVICES.USER, data, actorId 
+        });
         
         this.bus.emit(type, event).subscribe({
             error: (err) => this.logger.error(`Fail to publish ${type}: ${err?.message ?? err}`),
@@ -49,7 +54,7 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
 
-    roleChanged(userId: number, oldRole: number, newRole: number, actorId: number) {
+    roleChanged(userId: number, oldRole: string, newRole: string, actorId: number) {
         this.publish<UserRoleChangedPayload>(USER_EVT.ROLE_CHANGED, {
             userId, oldRole, newRole
         }, actorId);

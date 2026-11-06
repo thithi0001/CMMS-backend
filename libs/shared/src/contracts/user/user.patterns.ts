@@ -23,5 +23,59 @@ export const USER_EVT = {
     ROLE_CHANGED: 'evt.user.role_changed',
     PASSWORD_CHANGED: 'evt.user.password_changed',
     DEACTIVATED: 'evt.user.deactivated',
-    ACTIVATED: 'cmd.user.activated',
+    ACTIVATED: 'evt.user.activated',
+} as const;
+
+export const DEPARTMENT_CMD = {
+  FIND_ALL: 'cmd.department.find_all',
+  FIND_BY_ID: 'cmd.department.find_by_id',
+  CREATE: 'cmd.department.create',
+//   UPDATE: 'cmd.department.update',
+} as const;
+
+export const DEPARTMENT_EVT = {
+    CREATED: 'evt.department.created',
+    // UPDATED: 'evt.department.updated',
+} as const;
+
+export const EMPLOYEE_CMD = {
+  GET_HISTORY: 'cmd.employee.get_history',
+  FIND_BY_ID: 'cmd.employee.find_by_id',
+  FIND_BY_USER_ID: 'cmd.employee.find_by_user_id',
+  FIND_ALL: 'cmd.employee.find_all',
+  CREATE: 'cmd.employee.create',
+  END: 'cmd.employee.end',
+} as const;
+
+export const EMPLOYEE_EVT = {
+    CREATED: 'evt.employee.created',
+    ENDED: 'evt.employee.ended',
+} as const;
+
+export const EXPERTISE_CMD = {
+  FIND_ALL: 'cmd.expertise.find_all',
+  FIND_BY_ID: 'cmd.expertise.find_by_id',
+  FIND_BY_USER_ID: 'cmd.expertise.find_by_user_id',
+  CREATE: 'cmd.expertise.create',
+  ASSIGN: 'cmd.expertise.assign',
+  REVOKE: 'cmd.expertise.revoke',
+} as const;
+
+export const EXPERTISE_EVT = {
+  CREATED: 'evt.expertise.created',
+  ASSIGNED: 'evt.expertise.assigned',
+  REVOKED: 'evt.expertise.revoked',
+} as const;
+
+
+export const PASSWORD_RESET_CMD = {
+  REQUEST: 'cmd.user.request_password_reset',
+  VERIFY: 'cmd.user.verify_password_reset',
+  RESET: 'cmd.user.reset_password',
+} as const;
+
+export const PASSWORD_RESET_EVT = {
+    REQUESTED: 'evt.user.password_reset_requested',
+    VERIFIED: 'evt.user.password_reset_verified',
+    RESET: 'evt.user.password_reset',
 } as const;

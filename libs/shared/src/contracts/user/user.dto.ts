@@ -5,6 +5,7 @@ import {
     Matches, Max, MaxLength, Min, MinLength
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
+import { FindQueryDto } from '@app/shared/types/find-query';
 
 export class CreateUserDto {
     @IsString()
@@ -83,22 +84,75 @@ export class ChangePasswordDto {
     newPassword!: string;
 }
 
-export class FindUserQueryDto {
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    page?: number;
-
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    @Max(100)
-    limit?: number;
-    
-    @IsOptional() @IsString() search?: string;
+export class FindUserQueryDto extends FindQueryDto {    
     @IsOptional()
     @IsIn(Object.values(Role))
     roleCode?: Role;
+}
+
+export class CreateDepartmentDto {
+    @IsString() @IsNotEmpty() name!: string;
+    @IsString() @IsNotEmpty() code!: string;
+}
+
+export class FindDepartmentQueryDto extends FindQueryDto {}
+
+export class CreateEmployeeDto {
+    @IsInt() @IsNotEmpty() userId!: number;
+    @IsInt() @IsNotEmpty() departmentId!: number;
+    @IsString() @IsNotEmpty() position!: string;
+    
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'startDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'startDate không phải ngày hợp lệ' },
+    )
+    startDate!: string;
+    
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'endDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'endDate không phải ngày hợp lệ' },
+    )
+    @IsOptional() 
+    endDate?: string;
+}
+
+export class EndEmployeeDto {
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'endDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'endDate không phải ngày hợp lệ' },
+    )
+    endDate!: string;
+}
+
+export class FindEmployeeQueryDto extends FindQueryDto {
+    @IsOptional() @IsString() department?: string;
+    @IsOptional() @IsInt() userId?: number;
+}
+
+export class CreateExpertiseDto {
+    @IsString() @IsNotEmpty() name!: string;
+    @IsString() @IsNotEmpty() code!: string;
+    @IsString() @IsOptional() description?: string;
+}
+
+export class FindExpertiseQueryDto extends FindQueryDto {
+    @IsOptional() @IsInt() userId?: number;
+}
+
+export class AssignExpertiseDto {
+    @IsInt() @IsNotEmpty() userId!: number;
+    @IsInt() @IsNotEmpty() expertiseId!: number;
+}
+
+export class RevokeExpertiseDto extends AssignExpertiseDto {
+    @IsString() @IsNotEmpty() revokedAt!: string;
 }
