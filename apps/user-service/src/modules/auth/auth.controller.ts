@@ -28,4 +28,9 @@ export class AuthController {
     changePassword(@Payload() msg: ChangePasswordMsg) {
         return this.auth.changePassword(msg);
     }
+
+    @MessagePattern(USER_CMD.FORGET_PASSWORD)
+    forgetPassword(@Payload() msg: any) {
+        return this.auth.forgetPassword(msg);
+    }
 }

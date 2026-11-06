@@ -35,3 +35,32 @@ export interface UserStats {
     active: number;
     byRole: Record<number, number>;
 }
+
+export interface DepartmentView {
+    id: number;
+    code: string;
+    name: string;
+}
+
+export interface ExpertiseView {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+}
+
+export interface EmployeeView {
+    id: number;
+    userId: number;
+    department: DepartmentView;
+    position: string;
+    startDate: string;
+    endDate?: string;
+}
+
+export interface AssignExpertiseView {
+    userId: number;
+    expertiseId: number;
+    assignedAt?: string;
+    revokedAt?: string;
+}

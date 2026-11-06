@@ -14,7 +14,7 @@ export class UsersController {
     constructor(private readonly users: UsersService) {}
 
     @MessagePattern(USER_CMD.CREATE)
-    create(@Payload() msg: CreateUserMsg ) {
+    create(@Payload() msg: CreateUserMsg) {
         return this.users.create(msg);
     }
 
