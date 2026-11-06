@@ -2,6 +2,17 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logge
 import type { Response } from "express";
 import { TimeoutError } from "rxjs";
 
+export interface ApiErrorResponse {
+    success: false;
+    data: {
+        statusCode: number;
+        message: unknown;
+    },
+    meta: {
+        timestamp: string;
+    };
+}
+
 const isRpcError = (e: unknown): e is { statusCode: number; message: unknown } => 
     typeof e === 'object' && e !== null && 
     typeof (e as any).statusCode === 'number';
@@ -30,9 +41,17 @@ export class RpcToHttpFilter implements ExceptionFilter {
             this.logger.error(exception);
         }
 
-        res.status(status).json({
-            statusCode: status,
-            message
-        });
+        const response: ApiErrorResponse = {
+            success: false,
+            data: {
+                statusCode: status,
+                message,
+            },
+            meta: {
+                timestamp: new Date().toISOString(),
+            },
+        };
+
+        res.status(status).json(response);
     }
 }

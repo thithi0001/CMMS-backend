@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { RpcToHttpFilter } from './common/filters/rpc-to-http.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,6 +21,7 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new RpcToHttpFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   const port = Number(config.get('PORT', 3000));
   await app.listen(port);
