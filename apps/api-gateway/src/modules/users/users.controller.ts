@@ -81,4 +81,6 @@ export class UsersController {
             }
         );
     }
+
+    // thiếu stats, update, forget-password
 }

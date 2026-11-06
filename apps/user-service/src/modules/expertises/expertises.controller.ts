@@ -4,7 +4,6 @@ import { EXPERTISE_CMD } from "@app/shared/contracts/user/user.patterns";
 import type { 
     CreateExpertiseMsg, 
     AssignExpertiseMsg,
-    RevokeExpertiseMsg,
     FindExpertiseQueryDto,
 } from '@app/shared';
 import { ExpertisesService } from "./expertises.service";
@@ -24,7 +23,7 @@ export class ExpertisesController {
     }
 
     @MessagePattern(EXPERTISE_CMD.REVOKE)
-    revoke(@Payload() msg: RevokeExpertiseMsg) {
+    revoke(@Payload() msg: AssignExpertiseMsg) {
         return this.expertises.revoke(msg);
     }
     

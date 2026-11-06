@@ -3,7 +3,7 @@ import {
 } from "@nestjs/common";
 import { 
     CreateExpertiseDto, 
-    CreateExpertiseMsg, AssignExpertiseMsg, RevokeExpertiseMsg,
+    CreateExpertiseMsg, AssignExpertiseMsg,
     ExpertiseView, UserView,
     Role,
     FindExpertiseQueryDto,
@@ -146,7 +146,7 @@ export class ExpertisesService {
         };
     }
 
-    async revoke({ data, actor }: RevokeExpertiseMsg): Promise<{
+    async revoke({ data, actor }: AssignExpertiseMsg): Promise<{
         user: UserView,
         expertise: ExpertiseView,
         revokedAt: string | undefined,

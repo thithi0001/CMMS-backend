@@ -4,7 +4,7 @@ import {
     CreateUserDto, UpdateUserDto, ChangePasswordDto,
     CreateDepartmentDto,
     CreateEmployeeDto, EndEmployeeDto,
-    CreateExpertiseDto, AssignExpertiseDto, RevokeExpertiseDto
+    CreateExpertiseDto, AssignExpertiseDto
 } from './user.dto';
 
 // === USERS ===
@@ -25,5 +25,4 @@ export interface EndEmployeeMsg { id: number, data: EndEmployeeDto, actor: JwtPa
 // === EXPERTISE ===
 export interface CreateExpertiseMsg { dto: CreateExpertiseDto, actorId: number }
 export interface AssignExpertiseMsg { data: AssignExpertiseDto, actor: JwtPayload }
-export interface RevokeExpertiseMsg { data: RevokeExpertiseDto, actor: JwtPayload }
 

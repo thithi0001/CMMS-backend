@@ -41,7 +41,7 @@ export const DEPARTMENT_EVT = {
 export const EMPLOYEE_CMD = {
   GET_HISTORY: 'cmd.employee.get_history',
   FIND_BY_ID: 'cmd.employee.find_by_id',
-  FIND_BY_USER_ID: 'cmd.employee.find_by_user_id',
+  FIND_BY_USER_ID: 'cmd.employee.find_by_user_id', // current position
   FIND_ALL: 'cmd.employee.find_all',
   CREATE: 'cmd.employee.create',
   END: 'cmd.employee.end',

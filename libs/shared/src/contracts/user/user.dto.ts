@@ -152,7 +152,3 @@ export class AssignExpertiseDto {
     @IsInt() @IsNotEmpty() userId!: number;
     @IsInt() @IsNotEmpty() expertiseId!: number;
 }
-
-export class RevokeExpertiseDto extends AssignExpertiseDto {
-    @IsString() @IsNotEmpty() revokedAt!: string;
-}
