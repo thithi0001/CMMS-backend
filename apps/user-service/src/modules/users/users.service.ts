@@ -9,10 +9,10 @@ import {
     UserStats, UserView,
     Role,
 } from '@app/shared';
-import { UserEventsPublisher } from '../../messaging/user-events.publisher';
+import { UserEventsPublisher } from '../../messaging/publishers/user-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { toUserView } from './users.mapper';
+import { toUserView } from '../views.mapper';
 
 @Injectable()
 export class UsersService {
@@ -72,7 +72,6 @@ export class UsersService {
             throw new ConflictException('Email has been used');
         }
 
-
         const user = await this.prisma.users.create({
             data: {
                 username,
@@ -111,18 +110,21 @@ export class UsersService {
             }),
         };
 
-        const [items, total] = await this.prisma.$transaction([
+        const [users, total] = await this.prisma.$transaction([
             this.prisma.users.findMany({
                 where,
                 include: { roles: true },
                 skip: (page - 1) * limit,
                 take: limit,
-                orderBy: { created_at: 'desc' },
+                orderBy: { username: 'asc' },
             }),
             this.prisma.users.count({ where }),
-        ])
+        ]);
 
-        return { items: items.map(toUserView), total, page, limit };
+        return { 
+            items: users.map(toUserView), 
+            total, page, limit 
+        };
     }
 
     async findById(id: number): Promise<UserView> {
@@ -179,7 +181,7 @@ export class UsersService {
         });
 
         if (current.role_id !== role.id)
-            this.events.roleChanged(id, current.role_id, role.id, actor.sub);
+            this.events.roleChanged(id, current.roles.code, role.code, actor.sub);
         return toUserView(user);
     }
 
