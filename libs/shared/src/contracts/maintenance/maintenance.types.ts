@@ -1,0 +1,60 @@
+import { Task_stage, Task_tag } from "@app/shared/types/maintenance-enums";
+
+export interface TaskView {
+    id: number;
+    creatorId: number; // <- user-service
+    tag: Task_tag;
+    stage: Task_stage;
+    title: string;
+    content: string;
+    scheduledStartAt: string;
+    scheduledEndAt: string;
+    actualStartAt: string;
+    actualEndAt: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface TaskDetailView {
+    // phiếu báo lỗi
+    // thông tin thiết bị <- device-service
+    // đề nghị điều chỉnh kế hoạch
+    // phiếu xác nhận hư hỏng
+    // phiếu bàn giao trước và sau kế hoạch <- device-service -> sửa db
+    // danh sách vật tư = yêu cầu, đã lấy + đã dùng <- inventory-service
+    // đề nghị thanh lý
+    // biên bản nghiệm thu
+    // danh sách phân công <- user-service
+}
+
+export interface TicketView {
+    
+}
+
+export interface TaskDeviceView {
+    
+}
+
+export interface TaskProposalView {
+    
+}
+
+export interface DamageReportView {
+    
+}
+
+export interface InventoryView {
+    
+}
+
+export interface DisposeProposalView {
+    
+}
+
+export interface AcceptanceView {
+    
+}
+
+export interface AssigneeView {
+    
+}
