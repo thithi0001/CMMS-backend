@@ -15,14 +15,14 @@ export interface UpdateRoleMsg { id: number, roleCode: Role, actor: JwtPayload }
 export interface ChangePasswordMsg { actorId: number, dto: ChangePasswordDto }
 export interface DeactivateUserMsg { id: number; actor: JwtPayload }
 
-// === DEPARTMENT ===
+// === DEPARTMENTS ===
 export interface CreateDepartmentMsg { dto: CreateDepartmentDto, actorId: number }
 
-// === EMPLOYEE ===
+// === EMPLOYEES ===
 export interface CreateEmployeeMsg { dto: CreateEmployeeDto, actorId: number }
 export interface EndEmployeeMsg { id: number, data: EndEmployeeDto, actor: JwtPayload }
 
-// === EXPERTISE ===
+// === EXPERTISES ===
 export interface CreateExpertiseMsg { dto: CreateExpertiseDto, actorId: number }
 export interface AssignExpertiseMsg { data: AssignExpertiseDto, actor: JwtPayload }
 

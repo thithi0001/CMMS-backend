@@ -11,11 +11,13 @@ import {
 import { UserEventsPublisher } from "../../messaging/publishers/user-events.publisher";
 import { toUserView } from "../views.mapper";
 import { UsersService } from "../users/users.service";
+import { EmployeesService } from "../employees/employees.service";
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly users: UsersService,
+        private readonly employees: EmployeesService,
         private readonly jwt: JwtService,
         private readonly events: UserEventsPublisher,
         private readonly config: ConfigService,
@@ -43,12 +45,14 @@ export class AuthService {
             });
             throw new ForbiddenException('Account has been deactivated');
         }
+        const employee = await this.employees.findEmployeeByUserId(user.id);
 
         const payload: JwtPayload = {
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
             roleCode: user.roles.code as Role,
+            employeeId: employee?.id,
         };
         const { accessToken, refreshToken } = await this.generateTokens(payload);
         const view = toUserView(user);
@@ -81,11 +85,14 @@ export class AuthService {
             throw new UnauthorizedException('User is inactive or no longer exists');
         }
 
+        const employee = await this.employees.findEmployeeByUserId(user.id);
+
         return this.generateTokens({
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
             roleCode: user.roles.code as Role,
+            employeeId: employee?.id,
         });
     }
 
@@ -102,7 +109,7 @@ export class AuthService {
                 },
                 {
                     secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-                    expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d') as JwtSignOptions['expiresIn'],
+                    expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '1d') as JwtSignOptions['expiresIn'],
                 },
             ),
         ]);
