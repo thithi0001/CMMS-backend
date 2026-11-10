@@ -7,6 +7,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { DevicesModule } from './modules/devices/devices.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     BusModule,
     AuthModule,
     UsersModule,
+    DevicesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
