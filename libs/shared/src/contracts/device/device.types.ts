@@ -1,15 +1,15 @@
-import { Interval_Unit } from "@app/shared/types/device-enums";
+import { Interval_Unit } from "@app/shared/types/device.enum";
 
 export interface CategoryView {
     id: number;
     name: string;
     code: string;
     description: string;
-    intervalValue?: string;
+    intervalValue?: number;
     intervalUnit?: Interval_Unit;
-    depreciationPeriodMinMonths: string;
-    depreciationPeriodMaxMonths: string;
-    isActive: string;
+    depreciationPeriodMinMonths: number;
+    depreciationPeriodMaxMonths: number;
+    isActive: boolean;
     createdAt: string;
     updatedAt: string;
 }

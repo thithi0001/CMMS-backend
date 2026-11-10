@@ -1,6 +1,7 @@
 export const CATEGORY_CMD = {
     CREATE: 'cmd.category.create',
     UPDATE: 'cmd.category.update',
+    DELETE: 'cmd.category.delete',
     FIND_ALL: 'cmd.category.find_all',
     FIND_BY_ID: 'cmd.category.find_by_id',
 } as const;
@@ -8,6 +9,7 @@ export const CATEGORY_CMD = {
 export const CATEGORY_EVT = {
     CREATED: 'evt.category.created',
     UPDATED: 'evt.category.updated',
+    DELETED: 'evt.category.deleted',
 } as const;
 
 export const DEVICE_CMD = {

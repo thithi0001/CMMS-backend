@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { Interval_Unit } from '@app/shared/types/device-enums';
+import { Interval_Unit } from '@app/shared/types/device.enum';
 
 export class CreateCategoryDto {
     @IsString()
@@ -61,6 +61,12 @@ export class UpdateCategoryDto {
     @IsOptional()
     @IsInt()
     depreciationPeriodMaxMonths?: number;
+}
+
+export class FindCategoryQueryDto extends FindQueryDto {
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }
 
 export class CreateDeviceDto {
