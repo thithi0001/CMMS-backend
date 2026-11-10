@@ -1,12 +1,15 @@
 import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import type {
-    ChangePasswordDto, ChangePasswordMsg,
+    ChangePasswordMsg,
     FindUserByIdMsg, JwtPayload,
-    LoginDto, LoginResult,
-    RefreshTokenDto, RefreshTokenResult,
+    LoginResult,
+    RefreshTokenResult,
     UserView, 
 } from '@app/shared';
-import { USER_CMD } from '@app/shared';
+import { 
+    USER_CMD, 
+    ChangePasswordDto, LoginDto, RefreshTokenDto, 
+} from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';

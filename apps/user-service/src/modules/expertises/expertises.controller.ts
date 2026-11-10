@@ -1,10 +1,12 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { EXPERTISE_CMD } from "@app/shared/contracts/user/user.patterns";
+import { 
+    EXPERTISE_CMD,
+    FindExpertiseQueryDto, 
+} from "@app/shared";
 import type { 
     CreateExpertiseMsg, 
     AssignExpertiseMsg,
-    FindExpertiseQueryDto,
 } from '@app/shared';
 import { ExpertisesService } from "./expertises.service";
 
