@@ -7,11 +7,12 @@ export const Task_tag = {
 export type Task_tag = (typeof Task_tag)[keyof typeof Task_tag];
 
 export const Task_stage = {
-    NOT_STARTED: 'not_started',
+    TODO: 'todo',
     INPROGRESS: 'inprogress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
     DONE: 'done',
+    CANCELLED: 'cancelled',
+    PASS: 'pass',
+    FAIL: 'fail',
 } as const;
 export type Task_stage = (typeof Task_stage)[keyof typeof Task_stage];
 
@@ -32,7 +33,6 @@ export type Assignee_status = (typeof Assignee_status)[keyof typeof Assignee_sta
 
 export const Acceptance_status = {
     PENDING: 'pending',
-    SUCCESS: 'success',
     PASS: 'pass',
     FAIL: 'fail',
 } as const;

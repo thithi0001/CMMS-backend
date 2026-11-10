@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { Task_stage, Task_tag } from '@app/shared/types/maintenance-enums';
+import { Task_stage, Task_tag } from '@app/shared/types/maintenance.enum';
 
 export class CreateTaskDto {
     

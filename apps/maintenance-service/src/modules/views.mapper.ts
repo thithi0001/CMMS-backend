@@ -2,7 +2,7 @@ import type {
     TaskView
 } from '@app/shared';
 import type { tasks } from '../prisma/generated/client';
-import { Task_stage, Task_tag } from '@app/shared/types/maintenance-enums';
+import { Task_stage, Task_tag } from '@app/shared/types/maintenance.enum';
 
 export function toTaskView(task: tasks): TaskView {
     return {
