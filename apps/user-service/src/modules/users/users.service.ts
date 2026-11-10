@@ -135,11 +135,10 @@ export class UsersService {
     }
 
     async update({ id, data, actor }: UpdateUserMsg): Promise<UserView> {
-        if (actor.roleCode !== Role.ADMIN && actor.sub !== id) {
-            throw new ForbiddenException('Forbid to update this user')
-        }
+        const user = await this.findById(id);
 
-        await this.findById(id);
+        if (actor.sub !== user.id)
+            throw new ForbiddenException("You can only update your data");
 
         const patch = {
             fullname: data.fullname,
@@ -151,15 +150,15 @@ export class UsersService {
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
 
-        const user = await this.prisma.users.update({
-            where: { id },
+        const updated = await this.prisma.users.update({
+            where: { id: user.id },
             data: patch,
             include: { roles: true },
         });
 
         if (changedFields.length)
                 this.events.updated(id, changedFields, actor.sub);
-        return toUserView(user);
+        return toUserView(updated);
 
     }
 

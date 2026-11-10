@@ -59,6 +59,21 @@ export class UsersController {
         );
     }
 
+    @Patch(':id')
+    update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateUserDto,
+        @CurrentUser() actor: JwtPayload,
+    ) {
+        return this.bus.send<UserView, UpdateUserMsg>(
+            USER_CMD.UPDATE, {
+                id,
+                data: dto,
+                actor
+            }
+        );
+    }
+
     @Roles(Role.ADMIN)
     @Patch(':id/role')
     updateRole(
@@ -70,9 +85,9 @@ export class UsersController {
             USER_CMD.UPDATE_ROLE, {
                 id,
                 roleCode: dto.roleCode,
-                actor,
+                actor
             }
-        )
+        );
     }
 
     @Roles(Role.ADMIN)
@@ -88,5 +103,5 @@ export class UsersController {
         );
     }
 
-    // thiếu stats, update, forget-password
+    // thiếu stats, forget-password
 }
