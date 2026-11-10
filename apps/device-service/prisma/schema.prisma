@@ -168,10 +168,6 @@ model sources {
   devices_devices_supplier_idTosources     devices[]   @relation("devices_supplier_idTosources")
 }
 
-enum deprciation_method {
-  straight_line
-}
-
 enum depreciation_method {
   straight_line
 }
