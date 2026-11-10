@@ -4,14 +4,14 @@ export interface CategoryView {
     id: number;
     name: string;
     code: string;
-    description: string;
+    description?: string;
     intervalValue?: number;
     intervalUnit?: Interval_Unit;
-    depreciationPeriodMinMonths: number;
-    depreciationPeriodMaxMonths: number;
+    depreciationPeriodMinMonths?: number;
+    depreciationPeriodMaxMonths?: number;
     isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface DeviceView {

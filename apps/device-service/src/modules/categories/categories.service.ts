@@ -31,7 +31,7 @@ export class CategoriesService {
     }
 
     async createCategory(dto: CreateCategoryDto): Promise<CategoryView> {
-        if (dto.depreciationPeriodMinMonths && dto.depreciationPeriodMaxMonths)
+        if (dto.depreciationPeriodMaxMonths && dto.depreciationPeriodMinMonths)
             if (dto.depreciationPeriodMaxMonths < dto.depreciationPeriodMinMonths)
                 throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
         
@@ -101,8 +101,9 @@ export class CategoriesService {
 
         const min = data.depreciationPeriodMinMonths? data.depreciationPeriodMinMonths : category.depreciationPeriodMinMonths;
         const max = data.depreciationPeriodMaxMonths? data.depreciationPeriodMaxMonths : category.depreciationPeriodMaxMonths;
-        if (max < min)
-            throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
+        if (max && min)
+            if (max < min)
+                throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
 
         const patch = {
             name: data.name,
