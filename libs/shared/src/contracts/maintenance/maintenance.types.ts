@@ -7,10 +7,10 @@ export interface TaskView {
     stage: Task_stage;
     title: string;
     content: string;
-    scheduledStartAt: string;
-    scheduledEndAt: string;
-    actualStartAt: string;
-    actualEndAt: string;
+    scheduledStartAt?: string;
+    scheduledEndAt?: string;
+    actualStartAt?: string;
+    actualEndAt?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -18,13 +18,13 @@ export interface TaskView {
 export interface TaskDetailView {
     // phiếu báo lỗi
     // thông tin thiết bị <- device-service
+    // danh sách phân công <- user-service
     // đề nghị điều chỉnh kế hoạch
     // phiếu xác nhận hư hỏng
     // phiếu bàn giao trước và sau kế hoạch <- device-service -> sửa db
     // danh sách vật tư = yêu cầu, đã lấy + đã dùng <- inventory-service
     // đề nghị thanh lý
     // biên bản nghiệm thu
-    // danh sách phân công <- user-service
 }
 
 export interface TicketView {
@@ -40,6 +40,10 @@ export interface TaskProposalView {
 }
 
 export interface DamageReportView {
+    
+}
+
+export interface DeviceHandoverView {
     
 }
 

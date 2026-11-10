@@ -1,0 +1,202 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/prisma/generated"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model acceptance_reports {
+  id             Int                      @id @default(autoincrement())
+  creator_id     Int
+  task_id        Int
+  content        String?
+  manager_review String?
+  status         acceptance_report_status @default(pending)
+  approved_at    DateTime?                @db.Timestamptz(6)
+  created_at     DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?                @default(now()) @db.Timestamptz(6)
+  tasks          tasks                    @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([task_id], map: "idx_acceptance_reports_task_id")
+}
+
+model assignees {
+  id                    Int             @id @default(autoincrement())
+  assignee_id           Int
+  task_id               Int
+  status                assignee_status @default(pending)
+  confirmation_deadline DateTime?       @db.Timestamptz(6)
+  confirmed_at          DateTime?       @db.Timestamptz(6)
+  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?       @default(now()) @db.Timestamptz(6)
+  tasks                 tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([assignee_id, status], map: "idx_assignees_assignee_status")
+}
+
+model damage_reports {
+  id          Int             @id @default(autoincrement())
+  creator_id  Int
+  task_id     Int
+  device_id   Int?
+  content     String?
+  status      proposal_status @default(pending)
+  approved_at DateTime?       @db.Timestamptz(6)
+  created_at  DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?       @default(now()) @db.Timestamptz(6)
+  tasks       tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([task_id], map: "idx_damage_reports_task_id")
+}
+
+model dispose_proposals {
+  id          Int             @id @default(autoincrement())
+  creator_id  Int
+  task_id     Int
+  device_id   Int?
+  content     String?
+  status      proposal_status @default(pending)
+  approved_at DateTime?       @db.Timestamptz(6)
+  created_at  DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?       @default(now()) @db.Timestamptz(6)
+  tasks       tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([task_id], map: "idx_dispose_proposals_task_id")
+}
+
+model outbox_events {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type    String        @db.VarChar(100)
+  resource      String        @db.VarChar(100)
+  record_id     Int
+  payload       Json
+  status        event_status? @default(pending)
+  retry_count   Int           @default(0)
+  occurred_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  published_at  DateTime?     @db.Timestamptz(6)
+  next_retry_at DateTime?     @db.Timestamptz(6)
+  last_error    String?
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+
+  @@index([status, next_retry_at], map: "idx_outbox_events_pending", where: raw("(status = 'pending'::event_status)"))
+}
+
+model task_device {
+  id         Int       @id
+  device_id  Int
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  tasks      tasks     @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model task_proposals {
+  id             Int             @id @default(autoincrement())
+  creator_id     Int
+  task_id        Int
+  content        String?
+  manager_review String?
+  status         proposal_status @default(pending)
+  approved_at    DateTime?       @db.Timestamptz(6)
+  created_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  tasks          tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([task_id], map: "idx_task_proposals_task_id")
+}
+
+model task_ticket {
+  id         Int       @id
+  ticket_id  Int
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  tasks      tasks     @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tickets    tickets   @relation(fields: [ticket_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tasks {
+  id                 Int                  @id @default(autoincrement())
+  creator_id         Int
+  title              String
+  content            String?
+  tag                task_tag             @default(other)
+  stage              task_stage           @default(not_started)
+  scheduled_start_at DateTime?            @db.Timestamptz(6)
+  scheduled_end_at   DateTime?            @db.Timestamptz(6)
+  actual_start_at    DateTime?            @db.Timestamptz(6)
+  actual_end_at      DateTime?            @db.Timestamptz(6)
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  acceptance_reports acceptance_reports[]
+  assignees          assignees[]
+  damage_reports     damage_reports[]
+  dispose_proposals  dispose_proposals[]
+  task_device        task_device?
+  task_proposals     task_proposals[]
+  task_ticket        task_ticket?
+
+  @@index([tag, stage], map: "idx_tasks_tag_stage")
+}
+
+model tickets {
+  id           Int           @id @default(autoincrement())
+  creator_id   Int
+  device_id    Int
+  confirmer_id Int?
+  is_confirmed Boolean       @default(false)
+  priority     priority      @default(low)
+  description  String?
+  img_url      String?
+  created_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  task_ticket  task_ticket[]
+
+  @@index([device_id], map: "idx_tickets_device_id")
+}
+
+enum acceptance_report_status {
+  pending
+  success
+  pass
+  fail
+}
+
+enum assignee_status {
+  pending
+  confirmed
+  expired
+  cancelled
+}
+
+enum event_status {
+  pending
+  published
+}
+
+enum priority {
+  low
+  medium
+  hign
+}
+
+enum proposal_status {
+  pending
+  approved
+  rejected
+}
+
+enum task_stage {
+  not_started
+  in_progress
+  completed
+  cancelled
+  done
+}
+
+enum task_tag {
+  maintenance
+  repair
+  handover_device
+  other
+}

@@ -11,6 +11,7 @@ export const Task_stage = {
     INPROGRESS: 'inprogress',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
+    DONE: 'done',
 } as const;
 export type Task_stage = (typeof Task_stage)[keyof typeof Task_stage];
 
@@ -32,6 +33,7 @@ export type Assignee_status = (typeof Assignee_status)[keyof typeof Assignee_sta
 export const Acceptance_status = {
     PENDING: 'pending',
     SUCCESS: 'success',
+    PASS: 'pass',
     FAIL: 'fail',
 } as const;
 export type Acceptance_status = (typeof Acceptance_status)[keyof typeof Acceptance_status];

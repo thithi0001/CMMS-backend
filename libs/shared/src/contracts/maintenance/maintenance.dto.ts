@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { Task_tag } from '@app/shared/types/maintenance-enums';
+import { Task_stage, Task_tag } from '@app/shared/types/maintenance-enums';
 
 export class CreateTaskDto {
     
@@ -23,6 +23,7 @@ export class CreateTaskDto {
     scheduledEndAt!: string;
 }
 
+// MANAGER
 export class UpdateTaskDto {
     title
     tag
@@ -31,16 +32,28 @@ export class UpdateTaskDto {
     scheduledEndAt
 }
 
-export class UpdateTaskStageDto {
+// TECHNICIAN
+export class UpdateTaskProgressDto {
     stage
     actualStartAt
     actualEndAt
 }
 
 export class FindTaskQueryDto extends FindQueryDto {
-    userId
-    tag
-    stage
-    from
-    to
+    // search: title, deviceCode:device-service->deviceId, employeeCode/username:user-service->userId
+    @IsOptional()
+    @IsIn(Object.values(Task_tag))
+    tag?: Task_tag;
+
+    @IsOptional()
+    @IsIn(Object.values(Task_stage))
+    stage?: Task_stage;
+    
+    // scheduledStartAt, actualStartAt
+    @IsOptional()
+    from?: string;
+    
+    //scheduledEndAt, actualEndAt
+    @IsOptional()
+    to?: string;
 }
