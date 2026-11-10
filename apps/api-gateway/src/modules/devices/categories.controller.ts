@@ -20,7 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('categories')
-export class DepartmentsController {
+export class CategoriesController {
     constructor(
         private readonly bus: BusService
     ) {}
