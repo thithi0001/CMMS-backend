@@ -1,0 +1,217 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/prisma/generated"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model assign_devices {
+  id          Int            @id @default(autoincrement())
+  creator_id  Int
+  category_id Int
+  reason      String?
+  require     String?
+  status      request_status @default(pending)
+  created_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  categories  categories     @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, category_id], map: "idx_assign_devices_status_category")
+}
+
+model categories {
+  id                             Int              @id @default(autoincrement())
+  name                           String           @db.VarChar(50)
+  code                           String           @unique @db.VarChar(20)
+  description                    String?
+  interval_value                 Int?
+  interval_unit                  interval_unit?
+  depreciation_period_min_months Int?
+  depreciation_period_max_months Int?
+  is_active                      Boolean          @default(true)
+  created_at                     DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at                     DateTime?        @default(now()) @db.Timestamp(6)
+  assign_devices                 assign_devices[]
+  devices                        devices[]
+}
+
+model device_activity_histories {
+  id         Int          @id @default(autoincrement())
+  device_id  Int
+  old_state  device_state
+  new_state  device_state
+  created_at DateTime?    @default(now()) @db.Timestamptz(6)
+  devices    devices      @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([device_id], map: "idx_device_activity_histories_device_id")
+}
+
+model device_employee {
+  id          Int       @id @default(autoincrement())
+  device_id   Int
+  employee_id Int
+  approver_id Int
+  assigned_at DateTime? @db.Timestamptz(6)
+  returned_at DateTime? @db.Timestamptz(6)
+  is_returned Boolean   @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  devices     devices   @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([employee_id, is_returned], map: "idx_device_employee_employee_returned")
+}
+
+model devices {
+  id                                       Int                         @id @default(autoincrement())
+  category_id                              Int
+  manufacturer_id                          Int
+  supplier_id                              Int
+  code                                     String                      @unique @db.VarChar(20)
+  model                                    String?
+  serial_number                            String?                     @db.VarChar(50)
+  manufacture_date                         DateTime?                   @db.Date
+  purchase_date                            DateTime?                   @db.Date
+  purchase_price                           Decimal?                    @db.Decimal(18, 2)
+  original_cost                            Decimal?                    @db.Decimal(18, 2)
+  depreciation_method                      depreciation_method?        @default(straight_line)
+  deprciation_start_date                   DateTime?                   @db.Date
+  deprciation_period_months                Int?
+  accumulated_deprication                  Decimal?                    @default(0) @db.Decimal(18, 2)
+  book_value                               Decimal?                    @db.Decimal(18, 2)
+  specifications                           Json?
+  img_url                                  String?
+  state                                    device_state                @default(available)
+  last_maintenance_at                      DateTime?                   @db.Date
+  created_at                               DateTime?                   @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime?                   @default(now()) @db.Timestamptz(6)
+  install_location                         String?
+  device_activity_histories                device_activity_histories[]
+  device_employee                          device_employee[]
+  categories                               categories                  @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sources_devices_manufacturer_idTosources sources                     @relation("devices_manufacturer_idTosources", fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sources_devices_supplier_idTosources     sources                     @relation("devices_supplier_idTosources", fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  disposal_devices                         disposal_devices?
+  handover_devices                         handover_devices[]
+  retrieve_devices                         retrieve_devices[]
+
+  @@index([category_id], map: "idx_devices_category_id")
+  @@index([state], map: "idx_devices_state")
+}
+
+model disposal_devices {
+  id             Int       @id
+  creator_id     Int
+  disposal_date  DateTime? @db.Date
+  disposal_value Decimal?  @db.Decimal(18, 2)
+  reason         String?
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  devices        devices   @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model handover_devices {
+  id            Int           @id @default(autoincrement())
+  device_id     Int
+  deliver_id    Int
+  receiver_id   Int
+  is_handovered Boolean       @default(false)
+  type          handover_type
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  handovered_at DateTime?     @db.Timestamptz(6)
+  devices       devices       @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([device_id], map: "idx_handover_devices_device_id")
+}
+
+model outbox_events {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type    String        @db.VarChar(100)
+  resource      String        @db.VarChar(100)
+  record_id     Int
+  payload       Json
+  status        event_status? @default(pending)
+  retry_count   Int           @default(0)
+  occurred_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  published_at  DateTime?     @db.Timestamptz(6)
+  next_retry_at DateTime?     @db.Timestamptz(6)
+  last_error    String?
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+
+  @@index([status, next_retry_at], map: "idx_outbox_events_pending", where: raw("(status = 'pending'::event_status)"))
+}
+
+model retrieve_devices {
+  id            Int       @id @default(autoincrement())
+  device_id     Int
+  creator_id    Int
+  confirmer_id  Int?
+  is_confirmed  Boolean   @default(false)
+  required_time DateTime? @db.Timestamptz(6)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+  devices       devices   @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_confirmed], map: "idx_retrieve_devices_is_confirmed")
+}
+
+model sources {
+  id                                       Int         @id @default(autoincrement())
+  name                                     String?     @db.VarChar(100)
+  type                                     source_type
+  created_at                               DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime?   @default(now()) @db.Timestamptz(6)
+  devices_devices_manufacturer_idTosources devices[]   @relation("devices_manufacturer_idTosources")
+  devices_devices_supplier_idTosources     devices[]   @relation("devices_supplier_idTosources")
+}
+
+enum deprciation_method {
+  straight_line
+}
+
+enum depreciation_method {
+  straight_line
+}
+
+enum device_state {
+  available
+  in_use
+  broken
+  under_maintenance
+  awaiting_parts
+  testing
+  awaiting_disposed
+  disposed
+}
+
+enum event_status {
+  pending
+  published
+}
+
+enum handover_type {
+  assign
+  maintenance
+  retrieve
+}
+
+enum interval_unit {
+  day
+  week
+  month
+  year
+}
+
+enum request_status {
+  pending
+  approved
+  rejected
+}
+
+enum source_type {
+  manufacturer
+  supplier
+}

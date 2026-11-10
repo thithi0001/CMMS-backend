@@ -21,7 +21,11 @@
     "prisma:pull:user": "prisma db pull --config apps/user-service/prisma.config.ts",
     "prisma:generate:user": "prisma generate --config apps/user-service/prisma.config.ts",
     "prisma:studio:user": "prisma studio --config apps/user-service/prisma.config.ts",
-    "start:user": "nest start user-service --watch"
+    "start:user": "nest start user-service --watch",
+    "prisma:pull:device": "prisma db pull --config apps/device-service/prisma.config.ts",
+    "prisma:generate:device": "prisma generate --config apps/device-service/prisma.config.ts",
+    "prisma:studio:device": "prisma studio --config apps/device-service/prisma.config.ts",
+    "start:device": "nest start device-service --watch"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
