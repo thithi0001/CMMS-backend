@@ -18,6 +18,8 @@ model assign_devices {
   status      request_status @default(pending)
   created_at  DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  approver_id Int?
+  approved_at DateTime?      @db.Timestamptz(6)
   categories  categories     @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([status, category_id], map: "idx_assign_devices_status_category")
@@ -113,16 +115,17 @@ model disposal_devices {
 }
 
 model handover_devices {
-  id            Int           @id @default(autoincrement())
-  device_id     Int
-  deliver_id    Int
-  receiver_id   Int
-  is_handovered Boolean       @default(false)
-  type          handover_type
-  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
-  handovered_at DateTime?     @db.Timestamptz(6)
-  devices       devices       @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               Int                @id @default(autoincrement())
+  device_id        Int
+  deliver_id       Int
+  receiver_id      Int
+  is_handovered    Boolean            @default(false)
+  type             handover_type
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  handovered_at    DateTime?          @db.Timestamptz(6)
+  devices          devices            @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  retrieve_devices retrieve_devices[]
 
   @@index([device_id], map: "idx_handover_devices_device_id")
 }
@@ -145,22 +148,24 @@ model outbox_events {
 }
 
 model retrieve_devices {
-  id            Int       @id @default(autoincrement())
-  device_id     Int
-  creator_id    Int
-  confirmer_id  Int?
-  is_confirmed  Boolean   @default(false)
-  required_time DateTime? @db.Timestamptz(6)
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
-  devices       devices   @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               Int               @id @default(autoincrement())
+  device_id        Int
+  creator_id       Int
+  confirmer_id     Int?
+  is_confirmed     Boolean           @default(false)
+  required_time    DateTime?         @db.Timestamptz(6)
+  created_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  handover_id      Int?
+  devices          devices           @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  handover_devices handover_devices? @relation(fields: [handover_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "retrieve_devices_handover_devices_id_fkey")
 
   @@index([is_confirmed], map: "idx_retrieve_devices_is_confirmed")
 }
 
 model sources {
   id                                       Int         @id @default(autoincrement())
-  name                                     String?     @db.VarChar(100)
+  name                                     String      @db.VarChar(100)
   type                                     source_type
   created_at                               DateTime?   @default(now()) @db.Timestamptz(6)
   updated_at                               DateTime?   @default(now()) @db.Timestamptz(6)
