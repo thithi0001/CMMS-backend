@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
@@ -34,6 +35,12 @@ export class CategoriesService {
         if (dto.depreciationPeriodMaxMonths && dto.depreciationPeriodMinMonths)
             if (dto.depreciationPeriodMaxMonths < dto.depreciationPeriodMinMonths)
                 throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
+
+        if (
+            (dto.intervalValue && !dto.intervalUnit)
+            || (!dto.intervalValue && dto.intervalUnit)
+        )
+            throw new BadRequestException('Both internal value and internal unit must be defined together');
         
         const category = await this.prisma.categories.create({
             data: {
@@ -67,7 +74,7 @@ export class CategoriesService {
             is_active: isActive,
             ...(q.search && {
                 OR: [
-                    { code: { contains: q.search, mode: 'insensitive' }},
+                    { code: { startsWith: q.search, mode: 'insensitive' }},
                     { name: { contains: q.search, mode: 'insensitive' }},
                 ],
             }),
@@ -105,14 +112,21 @@ export class CategoriesService {
             if (max < min)
                 throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
 
+        if (
+            (data.intervalValue && !data.intervalUnit)
+            || (!data.intervalValue && data.intervalUnit)
+        )
+            throw new BadRequestException('Both internal value and internal unit must be defined together');
+
         const patch = {
             name: data.name,
             code: data.code,
             description: data.description,
             interval_value: data.intervalValue,
             interval_unit: data.intervalUnit,
-            depreciation_period_min_months: data.depreciationPeriodMinMonths,
-            depreciation_period_max_months: data.depreciationPeriodMaxMonths,
+            depreciation_period_min_months: min,
+            depreciation_period_max_months: max,
+            updated_at: new Date(),
         };
 
         const changedFields = Object.entries(patch)
@@ -120,18 +134,18 @@ export class CategoriesService {
             .map(([k]) => k);
 
         const updated = await this.prisma.categories.update({
-            where: { id },
+            where: { id: category.id },
             data: patch,
         });
 
         if (changedFields.length)
-            this.events.updated(id, changedFields, actor.sub);
+            this.events.updated(category.id, changedFields, actor.sub);
 
         return toCategoryView(updated);
     }
     
     async delete({ id, actor }: DeleteCategoryMsg): Promise<CategoryView> {
-        const category = await this.findById(id);
+        await this.findById(id);
 
         const deleted = await this.prisma.categories.update({
             where: { id },

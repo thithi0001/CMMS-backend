@@ -2,6 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule } from '@nestjs/microservices';
 import { BUS_CLIENT, busClientOptions } from '@app/shared';
+import { CategoryEventsPublisher } from './publishers/category-events.publisher';
+import { SourceEventsPublisher } from './publishers/source-events.publisher';
+import { DeviceEventsPublisher } from './publishers/device-events.publisher';
 @Global()
 @Module({
     imports: [
@@ -12,6 +15,6 @@ import { BUS_CLIENT, busClientOptions } from '@app/shared';
                 busClientOptions(config.getOrThrow<string>('RABBITMQ_URL')),
         }])
     ],
-    providers: [],
-    exports: [],
+    providers: [CategoryEventsPublisher, SourceEventsPublisher, DeviceEventsPublisher],
+    exports: [CategoryEventsPublisher, SourceEventsPublisher, DeviceEventsPublisher],
 }) export class MessagingModule {}

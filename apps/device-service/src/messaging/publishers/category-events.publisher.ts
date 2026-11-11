@@ -41,7 +41,7 @@ export class CategoryEventsPublisher implements OnApplicationBootstrap {
     updated(id: number, changedFields: string[], actorId: number) {
         this.publish<CategoryUpdatePayload>(CATEGORY_EVT.UPDATED, {
             categoryId: id,
-            changedFields: changedFields
+            changedFields
         }, actorId);
     }
 
