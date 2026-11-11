@@ -1,18 +1,18 @@
-export const Interval_Unit = {
+export const IntervalUnit = {
     DAY: 'day',
     WEEK: 'week',
     MONTH: 'month',
     YEAR: 'year',
 } as const;
-export type Interval_Unit = (typeof Interval_Unit)[keyof typeof Interval_Unit];
+export type IntervalUnit = (typeof IntervalUnit)[keyof typeof IntervalUnit];
 
-export const Source_type = {
+export const SourceType = {
     MANUFACTURER: 'manufacturer',
     SUPPLIER: 'supplier',
 } as const;
-export type Source_type = (typeof Source_type)[keyof typeof Source_type];
+export type SourceType = (typeof SourceType)[keyof typeof SourceType];
 
-export const Device_stage = {
+export const DeviceState = {
     AVAILABLE: 'available',
     IN_USE: 'in_use',
     BROKEN: 'broken',
@@ -22,19 +22,19 @@ export const Device_stage = {
     AWAITING_DISPOSED: 'awaiting_disposed',
     DISPOSED: 'disposed',
 } as const;
-export type Device_stage = (typeof Device_stage)[keyof typeof Device_stage];
+export type DeviceState = (typeof DeviceState)[keyof typeof DeviceState];
 
-export const Request_status = {
+export const RequestStatus = {
     PENDING: 'pending',
     APPROVED: 'approved',
     REJECTED: 'rejected',
 } as const;
-export type Request_status = (typeof Request_status)[keyof typeof Request_status];
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
 
-export const Handover_type = {
+export const HandoverType = {
     ASSIGN: 'assign',
     MAINTENANCE: 'maintenance',
     RETRIEVE: 'retrieve',
 } as const;
-export type Handover_type = (typeof Handover_type)[keyof typeof Handover_type];
+export type HandoverType = (typeof HandoverType)[keyof typeof HandoverType];
 

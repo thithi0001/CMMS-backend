@@ -1,133 +1,270 @@
 import { Type } from 'class-transformer';
 import {
     IsBoolean, IsDateString,
-    IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString,
+    IsEmail, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString,
     Matches, Max, MaxLength, Min, MinLength
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { Interval_Unit } from '@app/shared/types/device.enum';
+import { DeviceState, IntervalUnit, SourceType, RequestStatus } from '@app/shared/types/device.enum';
 
 export class CreateCategoryDto {
-    @IsString()
-    @IsNotEmpty()
-    name!: string;
+    @IsString() @IsNotEmpty() name!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    code!: string;
+    @IsString() @IsNotEmpty() code!: string;
     
-    @IsString()
-    description?: string;
+    @IsOptional() @IsString() description?: string;
     
-    @IsInt()
+    @IsOptional()
+    @IsInt() @Min(1)
     intervalValue?: number;
     
-    @IsIn(Object.values(Interval_Unit))
-    intervalUnit?: Interval_Unit;
+    @IsOptional()
+    @IsIn(Object.values(IntervalUnit))
+    intervalUnit?: IntervalUnit;
     
-    @IsInt()
+    @IsOptional()
+    @IsInt() @Min(1)
     depreciationPeriodMinMonths?: number;
     
-    @IsInt()
+    @IsOptional()
+    @IsInt() @Min(1)
     depreciationPeriodMaxMonths?: number;
 }
 
 export class UpdateCategoryDto {
-    @IsOptional()
-    @IsString()
-    name?: string;
+    @IsOptional() @IsString() name?: string;
+
+    @IsOptional() @IsString() code?: string;
+
+    @IsOptional() @IsString() description?: string;
 
     @IsOptional()
-    @IsString()
-    code?: string;
-
-    @IsOptional()
-    @IsString()
-    description?: string;
-
-    @IsOptional()
-    @IsInt()
+    @IsInt() @Min(1)
     intervalValue?: number;
 
     @IsOptional()
-    @IsIn(Object.values(Interval_Unit))
-    intervalUnit?: Interval_Unit;
+    @IsIn(Object.values(IntervalUnit))
+    intervalUnit?: IntervalUnit;
 
     @IsOptional()
-    @IsInt()
+    @IsInt() @Min(1)
     depreciationPeriodMinMonths?: number;
     
     @IsOptional()
-    @IsInt()
+    @IsInt() @Min(1)
     depreciationPeriodMaxMonths?: number;
 }
 
 export class FindCategoryQueryDto extends FindQueryDto {
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+    @IsOptional() @IsBoolean() isActive?: boolean;
+}
+
+export class CreateSourceDto {
+    @IsNotEmpty() @IsString() name!: string;
+    @IsIn(Object.values(SourceType)) type!: SourceType;
+}
+
+export class UpdateSourceDto {
+    @IsOptional() @IsString() name?: string;
+}
+
+export class FindSourceQueryDto extends FindQueryDto {
+    @IsOptional() @IsIn(Object.values(SourceType)) type?: SourceType;
 }
 
 export class CreateDeviceDto {
-    @IsString()
     @IsNotEmpty()
-    categoryCode!: string;
+    @IsInt() @Min(1)
+    categoryId!: number;
 
-    @IsString()
     @IsNotEmpty()
-    manufacturerCode!: string;
+    @IsInt() @Min(1)
+    manufacturerId!: number;
 
-    @IsString()
     @IsNotEmpty()
-    supplierCode!: string;
+    @IsInt() @Min(1)
+    supplierId!: number;
 
-    @IsString()
-    @IsNotEmpty()
-    code!: string;
+    @IsNotEmpty() @IsString() code!: string;
 
-    @IsString()
-    model?: string;
+    @IsOptional() @IsString() model?: string;
 
-    @IsString()
-    serial_number?: string;
+    @IsOptional() @IsString() serialNumber?: string;
 
+    @IsOptional()
     @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-        message: 'manufacture_date phải có định dạng YYYY-MM-DD',
+        message: 'manufactureDate phải có định dạng YYYY-MM-DD',
     })
     @IsDateString(
         { strict: true },
-        { message: 'manufacture_date không phải ngày hợp lệ' },
+        { message: 'manufactureDate không phải ngày hợp lệ' },
     )
-    manufacture_date?: string;
+    manufactureDate?: string;
 
+    @IsOptional()
     @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-        message: 'purchase_date phải có định dạng YYYY-MM-DD',
+        message: 'purchaseDate phải có định dạng YYYY-MM-DD',
     })
     @IsDateString(
         { strict: true },
-        { message: 'purchase_date không phải ngày hợp lệ' },
+        { message: 'purchaseDate không phải ngày hợp lệ' },
     )
-    purchase_date?: string;
+    purchaseDate?: string;
 
-    purchase_price?: number;
-
-    original_cost?: string;
-
-    specifications?: any;
-
+    @IsOptional()
     @IsString()
-    img_url?: string;
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'purchasePrice phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    purchasePrice?: string;
 
+    @IsOptional()
     @IsString()
-    install_location?: string;
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'originalCost phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    originalCost?: string;
+
+    @IsOptional() @IsObject() specifications?: Record<string, string>;
+
+    @IsOptional() @IsString() imgUrl?: string;
+
+    @IsOptional() @IsString() installLocation?: string;
 }
 
 export class UpdateDeviceDto {
+    @IsOptional()
+    @IsInt() @Min(1)
+    categoryId?: number;
+
+    @IsOptional()
+    @IsInt() @Min(1)
+    manufacturerId?: number;
+
+    @IsOptional()
+    @IsInt() @Min(1)
+    supplierId?: number;
     
+    @IsOptional() @IsString() code?: string;
+    @IsOptional() @IsString() model?: string;
+    @IsOptional() @IsString() serialNumber?: string;
+    @IsOptional() @IsObject() specifications?: Record<string, string>;
+    @IsOptional() @IsString() imgUrl?: string;
+    @IsOptional() @IsString() installLocation?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'manufactureDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'manufactureDate không phải ngày hợp lệ' },
+    )
+    manufactureDate?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'purchaseDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'purchaseDate không phải ngày hợp lệ' },
+    )
+    purchaseDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'purchasePrice phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    purchasePrice?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'originalCost phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    originalCost?: string;
 }
 
+export class FindDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsString() category?: string;
+    @IsOptional() @IsString() manufacturer?: string;
+    @IsOptional() @IsString() supplier?: string;
+    @IsOptional() @IsIn(Object.values(DeviceState)) state?: DeviceState;
 
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'from phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'from không phải ngày hợp lệ' },
+    )
+    from?: string;
 
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'to phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'to không phải ngày hợp lệ' },
+    )
+    to?: string;
 
+    @IsOptional()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'above phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    above?: string;
+    
+    @IsOptional()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'below phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    below?: string;
+}
 
+export class FindDeviceHistoryDto extends FindQueryDto {
+    @IsNotEmpty() @IsInt() @Min(1) deviceId!: number;
+}
+
+export class CreateAssignDeviceDto {
+    @IsNotEmpty() @IsInt() @Min(1) categoryId!: number;
+    @IsNotEmpty() @IsString() reason!: string;
+    @IsNotEmpty() @IsString() require!: string;
+}
+
+export class UpdateAssignDeviceDto {
+    @IsOptional() @IsString() reason?: string;
+    @IsOptional() @IsString() require?: string;
+    @IsOptional() @IsIn(Object.values(RequestStatus)) status?: RequestStatus;
+}
+
+export class FindAssignDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsInt() @Min(1) userId?: number
+    @IsOptional() @IsInt() @Min(1) categoryId?: number
+    @IsOptional() @IsIn(Object.values(RequestStatus)) status?: RequestStatus;
+    
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'from phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'from không phải ngày hợp lệ' },
+    )
+    from?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'to phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'to không phải ngày hợp lệ' },
+    )
+    to?: string;
+}
