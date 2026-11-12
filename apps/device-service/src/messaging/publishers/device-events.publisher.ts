@@ -40,7 +40,6 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
             deviceCode: d.code
         }, actorId);
     }
-
     updated(id: number, code: string, changedFields: string[], actorId: number) {
         this.publish<DeviceEventPayload>(DEVICE_EVT.UPDATED, {
             deviceId: id,
@@ -48,7 +47,6 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
             changedFields
         }, actorId);
     }
-    
     stateChanged(id: number, code: string, oldState: DeviceState, newState: DeviceState, actorId: number) {
         this.publish<DeviceStateChangePayload>(DEVICE_EVT.STATE_CHANGED, {
             deviceId: id,
@@ -77,13 +75,52 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
 
-    retrieveDeviceRequested() {}
-    retrieveDeviceUpdated() {}
-    retrieveDeviceDeleted() {}
+    retrieveDeviceRequested(, actorId: number) {
+        this.publish<>(DEVICE_EVT.RETRIEVE_DEVICE_CREATED, {
 
-    handoverDeviceRequested() {}
-    handoverDeviceUpdated() {}
-    handoverDeviceDeleted() {}
+        }, actorId);
+    }
+    retrieveDeviceUpdated(, actorId: number) {
+        this.publish<>(DEVICE_EVT.RETRIEVE_DEVICE_UPDATED, {
 
-    disposed() {}
+        }, actorId);
+    }
+    retrieveDeviceDeleted(, actorId: number) {
+        this.publish<>(DEVICE_EVT.RETRIEVE_DEVICE_DELETED, {
+
+        }, actorId);
+    }
+
+    handoverDeviceRequested(, actorId: number) {
+        this.publish<>(DEVICE_EVT.HANDOVER_DEVICE_CREATED, {
+
+        }, actorId);
+    }
+    handoverDeviceUpdated(, actorId: number) {
+        this.publish<>(DEVICE_EVT.HANDOVER_DEVICE_UPDATED, {
+
+        }, actorId);
+    }
+    handoverDeviceDeleted(, actorId: number) {
+        this.publish<>(DEVICE_EVT.HANDOVER_DEVICE_DELETED, {
+
+        }, actorId);
+    }
+
+    disposed(, actorId: number) {
+        this.publish<>(DEVICE_EVT.DISPOSED, {
+
+        }, actorId);
+    }
+
+    deviceEmployeeCreated(, actorId: number) {
+        this.publish<>(DEVICE_EVT.DEVICE_EMPLOYEE_CREATED, {
+
+        }, actorId);
+    }
+    deviceEmployeeUpdated(, actorId: number) {
+        this.publish<>(DEVICE_EVT.DEVICE_EMPLOYEE_UPDATED, {
+
+        }, actorId);
+    }
 }

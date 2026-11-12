@@ -1,4 +1,4 @@
-import { DeviceState, IntervalUnit, SourceType, RequestStatus } from "@app/shared/types/device.enum";
+import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "@app/shared/types/device.enum";
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -26,10 +26,10 @@ export interface SourceView {
 }
 
 export interface DeviceView {
-    id: number,
-    category: { id: number, name: string },
-    manufacturer: { id: number, name: string },
-    supplier: { id: number, name: string },
+    id: number;
+    category: { id: number; name: string; };
+    manufacturer: { id: number; name: string; };
+    supplier: { id: number; name: string };
     code: string;
     model?: string;
     serialNumber?: string;
@@ -55,15 +55,70 @@ export interface DeviceHistoryView {
 
 export interface AssignDeviceView {
     id: number;
-    creatorId: number;
     category: {
         id: number;
-        name: string,
-    },
+        name: string;
+    };
+    creatorId: number;
     reason: string;
     require: string;
     status: RequestStatus;
     approverId?: number;
     apprvedAt?: string;
     createdAt: string;
+}
+
+export interface RetrieveDeviceView {
+    id: number;
+    device: {
+        id: number;
+        code: string;
+    };
+    creatorId: number;
+    confirmerId?: number | null;
+    handoverId?: number | null;
+    isConfirmed: boolean;
+    requireTime?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface HandoverDeviceView {
+    id: number;
+    device: {
+        id: number;
+        code: string;
+    };
+    creatorId: number;
+    deliverId: number;
+    receiverId: number;
+    type: HandoverType;
+    isHandoverd: boolean;
+    handoveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface DisposeDeviceView {
+    id: number;
+    deviceCode: string;
+    disposalDate: string;
+    disposalValue: string;
+    reason?: string;
+    createdAt?: string;
+}
+
+export interface DeviceEmployeeView {
+    id: number;
+    device: {
+        id: number;
+        code: string;
+    };
+    employeeId: number;
+    approverId: number;
+    isReturned: boolean;
+    assignedAt: string;
+    returnedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }

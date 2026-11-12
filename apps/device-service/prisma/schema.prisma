@@ -124,6 +124,7 @@ model handover_devices {
   created_at       DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
   handovered_at    DateTime?          @db.Timestamptz(6)
+  creator_id       Int
   devices          devices            @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   retrieve_devices retrieve_devices[]
 

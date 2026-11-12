@@ -1,15 +1,18 @@
 import { 
     AssignDeviceView,
     CategoryView,
+    DeviceEmployeeView,
     DeviceHistoryView,
     DeviceView,
+    DisposeDeviceView,
+    HandoverDeviceView,
+    RetrieveDeviceView,
     SourceView,
 } from "@app/shared";
 import type { 
     categories, Prisma, sources, device_activity_histories,
-    assign_devices, 
 } from '../prisma/generated/client';
-import { DeviceState, IntervalUnit, SourceType, RequestStatus } from "@app/shared/types/device.enum";
+import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "@app/shared/types/device.enum";
 
 export function toCategoryView(category: categories): CategoryView {
     return {
@@ -86,23 +89,95 @@ export function toDeviceHistoryView(history: device_activity_histories): DeviceH
 }
 
 type AssignWithRelation = Prisma.assign_devicesGetPayload<{
-    include: {
-        categories: { select: { name: true }},
-    };
+    include: { categories: { select: { name: true }}};
 }>;
 export function toAssignDeviceView(a: AssignWithRelation): AssignDeviceView {
     return {
         id: a.id,
-        creatorId: a.creator_id,
         category: {
             id: a.category_id,
             name: a.categories.name,
         },
+        creatorId: a.creator_id,
         reason: a.reason || "",
         require: a.require || "",
         status: a.status as RequestStatus,
         approverId: a.approver_id || undefined,
         apprvedAt: a.approved_at?.toISOString(),
         createdAt: a.created_at?.toISOString() || "Missing",
+    };
+}
+
+type RetrieveWithDevice = Prisma.retrieve_devicesGetPayload<{
+    include: { devices: { select: { code: true }}};
+}>;
+export function toRetrieveDeviceView(r: RetrieveWithDevice): RetrieveDeviceView {
+    return {
+        id: r.id,
+        device: {
+            id: r.device_id,
+            code: r.devices.code,
+        },
+        creatorId: r.creator_id,
+        confirmerId: r.confirmer_id,
+        handoverId: r.handover_id,
+        isConfirmed: r.is_confirmed,
+        requireTime: r.required_time?.toISOString(),
+        createdAt: r.created_at?.toISOString(),
+        updatedAt: r.updated_at?.toISOString(),
+    };
+}
+
+type HandoverWithDevice = Prisma.handover_devicesGetPayload<{
+    include: { devices: { select: { code: true }}};
+}>;
+export function toHandoverDeviceView(h: HandoverWithDevice): HandoverDeviceView {
+    return {
+        id: h.id,
+        device: {
+            id: h.device_id,
+            code: h.devices.code,
+        },
+        creatorId: h.creator_id,
+        deliverId: h.deliver_id,
+        receiverId: h.receiver_id,
+        type: h.type as HandoverType,
+        isHandoverd: h.is_handovered,
+        handoveredAt: h.handovered_at?.toISOString(),
+        createdAt: h.created_at?.toISOString(),
+        updatedAt: h.updated_at?.toISOString(),
+    };
+}
+
+type DisposeWithDevice = Prisma.disposal_devicesGetPayload<{
+    include: { devices: { select: { code: true }}};
+}>;
+export function toDisposeDeviceView(d: DisposeWithDevice): DisposeDeviceView {
+    return {
+        id: d.id,
+        deviceCode: d.devices.code,
+        disposalDate: d.disposal_date?.toDateString() || "Missing",
+        disposalValue: d.disposal_value?.toString() || "Missing",
+        createdAt: d.created_at?.toISOString(),
+    };
+}
+
+type DeviceEmployeeWithDevice = Prisma.device_employeeGetPayload<{
+    include: { devices: { select: { code: true }}};
+}>;
+export function toDeviceEmployeeView(d: DeviceEmployeeWithDevice): DeviceEmployeeView {
+    return {
+        id: d.id,
+        device: {
+            id: d.device_id,
+            code: d.devices.code,
+        },
+        employeeId: d.employee_id,
+        approverId: d.approver_id,
+        isReturned: d.is_returned,
+        assignedAt: d.assigned_at?.toISOString() || "Missing",
+        returnedAt: d.returned_at?.toISOString(),
+        createdAt: d.created_at?.toISOString(),
+        updatedAt: d.updated_at?.toISOString(),
     };
 }

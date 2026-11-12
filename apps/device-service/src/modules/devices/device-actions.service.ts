@@ -1,5 +1,6 @@
 import {
-    ConflictException, ForbiddenException, Injectable, NotFoundException
+    ConflictException, ForbiddenException, Injectable, NotFoundException,
+    UnauthorizedException
 } from '@nestjs/common';
 import {
     CreateAssignDeviceMsg,
@@ -21,13 +22,18 @@ import {
     CreateDeviceEmployeeMsg,
     FindDeviceEmployeeQueryDto,
     UpdateDeviceEmployeeMsg,
+    DeleteHandoverDeviceMsg,
+    RetrieveDeviceView,
+    HandoverDeviceView,
+    DisposeDeviceView,
+    DeviceEmployeeView,
 } from '@app/shared';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
-import { toAssignDeviceView } from '../views.mapper';
-import { RequestStatus } from '@app/shared/types/device.enum';
+import { toAssignDeviceView, toDeviceEmployeeView, toDisposeDeviceView, toHandoverDeviceView, toRetrieveDeviceView } from '../views.mapper';
+import { DeviceState, RequestStatus } from '@app/shared/types/device.enum';
 import { DevicesService } from './devices.service';
 
 @Injectable()
@@ -114,7 +120,7 @@ export class DeviceActionsService {
         let patch = {};
         if (actor.roleCode === Role.MANAGER) {
             if (!data.status || data.status === RequestStatus.PENDING)
-                throw new ForbiddenException('Forbid to update this assign device request');
+                throw new UnauthorizedException('Unauthorized to perform this action');
             
             patch = {
                 status: data.status,
@@ -148,7 +154,7 @@ export class DeviceActionsService {
     async deleteAD({ id, actor }: DeleteAssignDeviceMsg): Promise<AssignDeviceView> {
         const a = await this.findADById(id);
         if (actor.employeeId !== a.creatorId)
-            if (a.status !== RequestStatus.PENDING && a.status !== RequestStatus.CANCEL) 
+            if (a.status !== RequestStatus.PENDING) 
                 throw new ForbiddenException('Forbid to delete this assign device request')
         await this.prisma.assign_devices.delete({ where: { id }});
 
@@ -157,36 +163,39 @@ export class DeviceActionsService {
     }
 
     // === RETRIEVE ===
-    async retrieve({ dto, actor }: CreateRetrieveDeviceMsg): Promise<> {
-        const device = await this.devicesService.findById(deviceId);
-        chỉ có m và e là được tạo
+    async retrieve({ dto, actor }: CreateRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
+        const device = await this.devicesService.findById(dto.deviceId);
+        if (actor.roleCode === Role.TECHNICIAN)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+
         const retrieve = await this.prisma.retrieve_devices.create({
             data: {
-                device_id: ,
-                creator_id: ,
-                confirmer_id: ,
-                required_time: ,
-            }
+                device_id: device.id,
+                creator_id: actor.employeeId,
+                confirmer_id: dto.confirmerId,
+                required_time: new Date(dto.requiredTime),
+            },
+            include: { devices: { select: { code: true }}},
         });
-        const view = to;
+        const view = toRetrieveDeviceView(retrieve);
         this.events.retrieveDeviceRequested();
         return view;
     }
 
     findRetrieveDeviceById(id: number) {
-        return this.prisma.handover_devices.findUnique({
+        return this.prisma.retrieve_devices.findUnique({
             where: { id },
-            include: device + handover
+            include: { devices: { select: { code: true }}},
         });
     }
 
-    async findRDById(id: number): Promise<> {
+    async findRDById(id: number): Promise<RetrieveDeviceView> {
         const r = await this.findRetrieveDeviceById(id);
         if (!r) throw new NotFoundException('Retrieve device request not found');
-        return to
+        return toRetrieveDeviceView(r);
     }
 
-    async findAllRD(q: FindRetrieveDeviceQueryDto): Promise<Paginated<>> {
+    async findAllRD(q: FindRetrieveDeviceQueryDto): Promise<Paginated<RetrieveDeviceView>> {
         const { page = 1, limit = 20, isConfirmed = false } = q;
         const dateFilter = {
             ...(q.from !== undefined? { gte: new Date(q.from) } : {}),
@@ -210,28 +219,49 @@ export class DeviceActionsService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { created_at: 'desc' },
-                include: device + handover
+                include: { devices: { select: { code: true }}},
             }),
         ]);
 
         return {
-            items: items.map(to),
+            items: items.map(toRetrieveDeviceView),
             total, page, limit
         };
     }
 
-    async updateRD({ id, data, actor }: UpdateRetrieveDeviceMsg): Promise<> {
-        let patch = {
-            is_confirmed
-            required_time
-            handover_id
-            updated_at
-        }
+    async updateRD({ id, data, actor }: UpdateRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
+        const r = await this.findRDById(id);
+        if (actor.employeeId !== r.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        if (r.isConfirmed)
+            throw new ForbiddenException('Forbid to update retrieve device request');
+
+        const patch = {
+            is_confirmed: data.isConfirmed,
+            required_time: data.requiredTime === undefined ? undefined : new Date(data.requiredTime),
+            handover_id: data.handoverId === undefined ? undefined : data.handoverId,
+            updated_at: new Date(),
+        };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+
+        const updated = await this.prisma.retrieve_devices.update({
+            where: { id: r.id },
+            data: patch,
+            include: { devices: { select: { code: true }}},
+        });
+        const view = toRetrieveDeviceView(updated);
+        if (changedFields.length)
+            this.events.retrieveDeviceUpdated();
+        return view;        
     }
 
-    async deleteRD({ id, actor }: DeleteRetrieveDeviceMsg): Promise<> {
+    async deleteRD({ id, actor }: DeleteRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
         const r = await this.findRDById(id);
-        if (actor.employeeId !== r.creatorId || r.isConfirmed)
+        if (actor.employeeId !== r.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        if (r.isConfirmed)
             throw new ForbiddenException('Forbid to delete this retrieve device request');
         await this.prisma.retrieve_devices.delete({ where: { id }});
         this.events.retrieveDeviceDeleted();
@@ -239,16 +269,20 @@ export class DeviceActionsService {
     }
 
     // === HANDOVER ===
-    async handover({ dto, actor }: CreateHandoverDeviceMsg): Promise<> {
-        const device = await this.devicesService.findById(deviceId);
+    async handover({ dto, actor }: CreateHandoverDeviceMsg): Promise<HandoverDeviceView> {
+        const device = await this.devicesService.findById(dto.deviceId);
         
         const h = await this.prisma.handover_devices.create({
             data: {
-
+                device_id: device.id,
+                creator_id: actor.employeeId,
+                deliver_id: dto.deliverId,
+                receiver_id: dto.receiverId,
+                type: dto.type,
             },
-            include: device
+            include: { devices: { select: { code: true }}},
         });
-        const view = to
+        const view = toHandoverDeviceView(h);
         this.events.handoverDeviceRequested();
         return view;
     }
@@ -256,17 +290,17 @@ export class DeviceActionsService {
     findHandoverDeviceById(id: number) {
         return this.prisma.handover_devices.findUnique({
             where: { id },
-            include: device
+            include: { devices: { select: { code: true }}},
         });
     }
 
-    async findHDById(id: number): Promise<> {
+    async findHDById(id: number): Promise<HandoverDeviceView> {
         const r = await this.findHandoverDeviceById(id);
         if (!r) throw new NotFoundException('Handover device request not found');
-        return r;
+        return toHandoverDeviceView(r);
     }
 
-    async findAllHD(q: FindHandoverDeviceQueryDto): Promise<Paginated<>> {
+    async findAllHD(q: FindHandoverDeviceQueryDto): Promise<Paginated<HandoverDeviceView>> {
         const { page = 1, limit = 20, isHandoverd = false } = q;
         const dateFilter = {
             ...(q.from !== undefined? { gte: new Date(q.from) } : {}),
@@ -291,56 +325,112 @@ export class DeviceActionsService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { created_at: 'desc' },
-                include: device 
+                include: { devices: { select: { code: true }}},
             }),
         ]);
 
         return {
-            items: items.map(to),
+            items: items.map(toHandoverDeviceView),
             total, page, limit
         };
     }
 
-    async updateHD({ id, data, actor }: UpdateHandoverDeviceMsg): Promise<> {
-        let patch = {
-            is_handovered
-            handovered_at
-            updated_at
-        }
+    async updateHD({ id, data, actor }: UpdateHandoverDeviceMsg): Promise<HandoverDeviceView> {
+        const h = await this.findHDById(id);
+        if (h.isHandoverd)
+            throw new ForbiddenException('Forbid to update handover device request');
+        if (actor.employeeId !== h.receiverId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        const patch = {
+            is_handovered: true,
+            handovered_at: data.handoveredAt !== undefined ? new Date(data.handoveredAt) : new Date(),
+            updated_at: new Date(),
+        };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+        
+        const updated = await this.prisma.handover_devices.update({
+            where: { id },
+            data: patch,
+            include: { devices: { select: { code: true }}},
+        });
+        const view = toHandoverDeviceView(updated);
+        if (changedFields.length)
+            this.events.handoverDeviceUpdated()
+        return view;
+    }
+
+    async deleteHD({ id, actor }: DeleteHandoverDeviceMsg): Promise<HandoverDeviceView> {
+        const h = await this.findHDById(id);
+        if (h.isHandoverd)
+            throw new ForbiddenException('Forbid to delete handover device request');
+        if (actor.employeeId !== h.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        
+        await this.prisma.$transaction([
+            this.prisma.retrieve_devices.updateMany({
+                where: { handover_id: h.id },
+                data: { handover_id: null },
+            }),
+            this.prisma.handover_devices.delete({ where: { id }}),
+        ]);
+        this.events.handoverDeviceDeleted();
+        return h;
     }
 
     // === DISPOSE ===
-    async disposeDevice({ dto, actor }: CreateDisposeDeviceMsg): Promise<> {
-        chỉ có m và amới được tạo
-        chỉ có chờ awaiting_disposal, available, broken
-        const device = await this.devicesService.findById(deviceId);
-        const d = await this.prisma.disposal_devices.create({
-            data: {
-                id: device.id,
-                disposal_date: ,
-                disposal_value: ,
-                reason: ,
-            },
-        });
-        const view = to
+    async disposeDevice({ dto, actor }: CreateDisposeDeviceMsg): Promise<DisposeDeviceView> {
+        if (actor.roleCode !== Role.ADMIN && actor.roleCode !== Role.MANAGER)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+
+        const device = await this.devicesService.findById(dto.deviceId);
+        const excluded: DeviceState[] = [
+            DeviceState.AVAILABLE,
+            DeviceState.BROKEN,
+            DeviceState.AWAITING_DISPOSED,
+        ];
+        if (!excluded.includes(device.state))
+            throw new ForbiddenException('Forbid to dispose this device');
+        
+        const [, d] = await this.prisma.$transaction([
+            this.prisma.devices.update({
+                where: { id: device.id },
+                data: {
+                    state: DeviceState.DISPOSED,
+                    updated_at: new Date(),
+                },
+            }),
+            this.prisma.disposal_devices.create({
+                data: {
+                    id: device.id,
+                    creator_id: actor.employeeId,
+                    disposal_date: new Date(dto.disposalDate),
+                    disposal_value: Prisma.Decimal(dto.disposalValue),
+                    reason: dto.reason,
+                },
+                include: { devices: { select: { code: true }}},
+            }),
+        ]);
+        const view = toDisposeDeviceView(d);
         this.events.disposed();
         return view;
     }
 
-    findDisposeDeviceById(id: number): Promise<> {
+    findDisposeDeviceById(id: number) {
         return this.prisma.disposal_devices.findUnique({
             where: { id },
-            include: device
+            include: { devices: { select: { code: true }}},
         });
     }
 
-    async findDDById(id: number): Promise<> {
+    async findDDById(id: number): Promise<DisposeDeviceView> {
         const d = await this.findDisposeDeviceById(id);
         if (!d) throw new NotFoundException('Dispose device form not found');
-        return d;
+        return toDisposeDeviceView(d);
     }
 
-    async findAllDD(q: FindDisposeDeviceQueryDto): Promise<Paginated<>> {
+    async findAllDD(q: FindDisposeDeviceQueryDto): Promise<Paginated<DisposeDeviceView>> {
         const { page = 1, limit = 20 } = q;
         const priceFilter = {
             ...(q.above !== undefined
@@ -370,48 +460,61 @@ export class DeviceActionsService {
                     disposal_date: 'desc',
                     created_at: 'desc',
                 },
-                include: device 
+                include: { devices: { select: { code: true }}},
             }),
         ]);
 
         return {
-            items: items.map(to),
+            items: items.map(toDisposeDeviceView),
             total, page, limit
         };
     }
 
     // === DEVICE & EMPLOYEE ===
-    async createDeviceEmployee({ dto, actor }: CreateDeviceEmployeeMsg): Promise<> {
-        chỉ có available mới được tạo
-        chỉ có m và a mới được tạo
-        const device = await this.devicesService.findById(deviceId);
-        const d = await this.prisma.device_employee.create({
-            data: {
-                device_id: device.id,
-                employee_id: ,
-                approver_id: ,
-                assigned_at: ,
-            },
-        });
-        const view = to
-        this.events.disposed();
+    async createDeviceEmployee({ dto, actor }: CreateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {
+        if (actor.roleCode !== Role.ADMIN && actor.roleCode !== Role.MANAGER)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        const device = await this.devicesService.findById(dto.deviceId);
+        if (device.state !== DeviceState.AVAILABLE)
+            throw new ForbiddenException('Forbid to create device employee');
+        
+        const [d, ] = await this.prisma.$transaction([
+            this.prisma.device_employee.create({
+                data: {
+                    device_id: device.id,
+                    employee_id: dto.employeeId,
+                    approver_id: actor.employeeId,
+                    assigned_at: new Date(dto.assignedAt),
+                },
+                include: { devices: { select: { code: true }}},
+            }),
+            this.prisma.devices.update({
+                where: { id: device.id },
+                data: {
+                    state: DeviceState.IN_USE,
+                    updated_at: new Date(),
+                }
+            }),
+        ]);
+        const view = toDeviceEmployeeView(d);
+        this.events.deviceEmployeeCreated();
         return view;
     }
 
-    findDeviceEmployeeById(id: number): Promise<> {
+    findDeviceEmployeeById(id: number) {
         return this.prisma.device_employee.findUnique({ 
             where: { id },
             include: { devices: { select: { code: true }}},
         });
     }
 
-    async findDEById(id: number): Promise<> {
+    async findDEById(id: number): Promise<DeviceEmployeeView> {
         const d = await this.findDeviceEmployeeById(id);
         if (!d) throw new NotFoundException('Device employee not found');
-        return d;
+        return toDeviceEmployeeView(d);
     }
 
-    async findAllDE(q: FindDeviceEmployeeQueryDto): Promise<Paginated<>> {
+    async findAllDE(q: FindDeviceEmployeeQueryDto): Promise<Paginated<DeviceEmployeeView>> {
         const { page = 1, limit = 20, isReturned = false } = q;
         const dateFilter = {
             ...(q.from !== undefined? { gte: new Date(q.from) } : {}),
@@ -440,17 +543,42 @@ export class DeviceActionsService {
         ]);
         
         return {
-            items: items.map(to),
+            items: items.map(toDeviceEmployeeView),
             total, page, limit
         };
     }
 
-    async updateDE({ id, data, actor }: UpdateDeviceEmployeeMsg): Promise<> {
-        let patch = {
-            is_returned: 
-            returned_at:
-            udpated_at: new Date()
-        }
-        chỉ có người tạo mới được cập nhật 
+    async updateDE({ id, data, actor }: UpdateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {
+        const d = await this.findDEById(id);
+        if (actor.employeeId !== d.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+
+        const patch = {
+            is_returned: true,
+            returned_at: new Date(data.returnedAt),
+            udpated_at: new Date(),
+        };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+        
+        const [updated, ] = await this.prisma.$transaction([
+            this.prisma.device_employee.update({
+                where: { id },
+                data: patch,
+                include: { devices: { select: { code: true }}},
+            }),
+            this.prisma.devices.update({
+                where: { id },
+                data: {
+                    state: DeviceState.AVAILABLE,
+                    updated_at: new Date(),
+                },
+            }),
+        ]);
+        const view = toDeviceEmployeeView(updated);
+        if (changedFields.length)
+            this.events.deviceEmployeeUpdated();
+        return view;
     }
 }

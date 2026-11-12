@@ -39,7 +39,9 @@ export const DEVICE_CMD = {
     CREATE_HANDOVER_DEVICE: 'cmd.device.create_handover_device',
     UPDATE_HANDOVER_DEVICE: 'cmd.device.update_handover_device',
     DELETE_HANDOVER_DEVICE: 'cmd.device.delete_handover_device',
-    DISPOSE
+    DISPOSE: 'cmd.device.dispose',
+    CREATE_DEVICE_EMPLOYEE: 'cmd.device.create_device_employee',
+    UPDATE_DEVICE_EMPLOYEE: 'cmd.device.update_device_employee',
 } as const;
 
 export const DEVICE_EVT = {
@@ -55,6 +57,9 @@ export const DEVICE_EVT = {
     HANDOVER_DEVICE_CREATED: 'evt.device.handover_device_created',
     HANDOVER_DEVICE_UPDATED: 'evt.device.handover_device_updated',
     HANDOVER_DEVICE_DELETED: 'evt.device.handover_device_deleted',
+    DISPOSED: 'evt.device.disposed',
+    DEVICE_EMPLOYEE_CREATED: 'evt.device.device_employee_created',
+    DEVICE_EMPLOYEE_UPDATED: 'evt.device.device_employee_updated',
 } as const;
 
 

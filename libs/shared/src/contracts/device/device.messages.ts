@@ -47,6 +47,7 @@ export interface DeleteRetrieveDeviceMsg { id: number, actor: JwtPayload }
 // HANDOVER
 export interface CreateHandoverDeviceMsg { dto: CreateHandoverDeviceDto, actor: JwtPayload }
 export interface UpdateHandoverDeviceMsg { id: number, data: UpdateHandoverDeviceDto, actor: JwtPayload }
+export interface DeleteHandoverDeviceMsg { id: number, actor: JwtPayload }
 
 // DISPOSE
 export interface CreateDisposeDeviceMsg { dto: CreateDisposeDeviceDto, actor: JwtPayload }
