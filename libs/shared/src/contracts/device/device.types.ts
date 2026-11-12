@@ -101,6 +101,7 @@ export interface HandoverDeviceView {
 
 export interface DisposeDeviceView {
     id: number;
+    creatorId: number;
     deviceCode: string;
     disposalDate: string;
     disposalValue: string;

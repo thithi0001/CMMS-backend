@@ -155,6 +155,7 @@ type DisposeWithDevice = Prisma.disposal_devicesGetPayload<{
 export function toDisposeDeviceView(d: DisposeWithDevice): DisposeDeviceView {
     return {
         id: d.id,
+        creatorId: d.creator_id,
         deviceCode: d.devices.code,
         disposalDate: d.disposal_date?.toDateString() || "Missing",
         disposalValue: d.disposal_value?.toString() || "Missing",

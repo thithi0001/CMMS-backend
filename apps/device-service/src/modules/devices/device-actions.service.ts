@@ -1,32 +1,13 @@
 import {
-    ConflictException, ForbiddenException, Injectable, NotFoundException,
-    UnauthorizedException
+    ForbiddenException, Injectable, NotFoundException, UnauthorizedException
 } from '@nestjs/common';
 import {
-    CreateAssignDeviceMsg,
-    AssignDeviceView,
-    FindAssignDeviceQueryDto,
-    Paginated,
-    UpdateAssignDeviceMsg,
-    DeleteAssignDeviceMsg,
-    Role,
-    CreateRetrieveDeviceMsg,
-    FindRetrieveDeviceQueryDto,
-    UpdateRetrieveDeviceMsg,
-    DeleteRetrieveDeviceMsg,
-    CreateHandoverDeviceMsg,
-    FindHandoverDeviceQueryDto,
-    UpdateHandoverDeviceMsg,
-    CreateDisposeDeviceMsg,
-    FindDisposeDeviceQueryDto,
-    CreateDeviceEmployeeMsg,
-    FindDeviceEmployeeQueryDto,
-    UpdateDeviceEmployeeMsg,
-    DeleteHandoverDeviceMsg,
-    RetrieveDeviceView,
-    HandoverDeviceView,
-    DisposeDeviceView,
-    DeviceEmployeeView,
+    Paginated, Role,
+    CreateAssignDeviceMsg, AssignDeviceView, FindAssignDeviceQueryDto, UpdateAssignDeviceMsg, DeleteAssignDeviceMsg,
+    CreateRetrieveDeviceMsg, FindRetrieveDeviceQueryDto, UpdateRetrieveDeviceMsg, DeleteRetrieveDeviceMsg, RetrieveDeviceView,
+    CreateHandoverDeviceMsg, FindHandoverDeviceQueryDto, UpdateHandoverDeviceMsg, HandoverDeviceView,
+    CreateDisposeDeviceMsg, FindDisposeDeviceQueryDto, DisposeDeviceView,
+    CreateDeviceEmployeeMsg, FindDeviceEmployeeQueryDto, UpdateDeviceEmployeeMsg,DeleteHandoverDeviceMsg, DeviceEmployeeView,
 } from '@app/shared';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
@@ -178,7 +159,7 @@ export class DeviceActionsService {
             include: { devices: { select: { code: true }}},
         });
         const view = toRetrieveDeviceView(retrieve);
-        this.events.retrieveDeviceRequested();
+        this.events.retrieveDeviceRequested(view, actor.sub);
         return view;
     }
 
@@ -253,7 +234,7 @@ export class DeviceActionsService {
         });
         const view = toRetrieveDeviceView(updated);
         if (changedFields.length)
-            this.events.retrieveDeviceUpdated();
+            this.events.retrieveDeviceUpdated(view, changedFields, actor.sub);
         return view;        
     }
 
@@ -264,7 +245,7 @@ export class DeviceActionsService {
         if (r.isConfirmed)
             throw new ForbiddenException('Forbid to delete this retrieve device request');
         await this.prisma.retrieve_devices.delete({ where: { id }});
-        this.events.retrieveDeviceDeleted();
+        this.events.retrieveDeviceDeleted(r, actor.sub);
         return r;
     }
 
@@ -283,7 +264,7 @@ export class DeviceActionsService {
             include: { devices: { select: { code: true }}},
         });
         const view = toHandoverDeviceView(h);
-        this.events.handoverDeviceRequested();
+        this.events.handoverDeviceRequested(view, actor.sub);
         return view;
     }
 
@@ -357,7 +338,7 @@ export class DeviceActionsService {
         });
         const view = toHandoverDeviceView(updated);
         if (changedFields.length)
-            this.events.handoverDeviceUpdated()
+            this.events.handoverDeviceUpdated(view, changedFields, actor.sub);
         return view;
     }
 
@@ -375,7 +356,7 @@ export class DeviceActionsService {
             }),
             this.prisma.handover_devices.delete({ where: { id }}),
         ]);
-        this.events.handoverDeviceDeleted();
+        this.events.handoverDeviceDeleted(h, actor.sub);
         return h;
     }
 
@@ -413,7 +394,7 @@ export class DeviceActionsService {
             }),
         ]);
         const view = toDisposeDeviceView(d);
-        this.events.disposed();
+        this.events.disposed(view, actor.sub);
         return view;
     }
 
@@ -497,7 +478,7 @@ export class DeviceActionsService {
             }),
         ]);
         const view = toDeviceEmployeeView(d);
-        this.events.deviceEmployeeCreated();
+        this.events.deviceEmployeeCreated(view, actor.sub);
         return view;
     }
 
@@ -550,7 +531,7 @@ export class DeviceActionsService {
 
     async updateDE({ id, data, actor }: UpdateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {
         const d = await this.findDEById(id);
-        if (actor.employeeId !== d.creatorId)
+        if (actor.employeeId !== d.approverId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         const patch = {
@@ -578,7 +559,7 @@ export class DeviceActionsService {
         ]);
         const view = toDeviceEmployeeView(updated);
         if (changedFields.length)
-            this.events.deviceEmployeeUpdated();
+            this.events.deviceEmployeeUpdated(view, changedFields, actor.sub);
         return view;
     }
 }

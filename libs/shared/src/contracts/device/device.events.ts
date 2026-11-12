@@ -35,3 +35,32 @@ export interface AssignDevicePayload {
     creatorId: number;
     changedFields?: string[];
 }
+
+export interface RetrieveDevicePayload {
+    retrieveDeviceId: number;
+    deviceCode: string;
+    creatorId: number;
+    changedFields?: string[];
+}
+
+export interface HandoverDevicePayload {
+    handoverDeviceId: number;
+    deviceCode: string;
+    creatorId: number;
+    changedFields?: string[];
+}
+
+export interface DisposeDevicePayload {
+    deviceId: number;
+    deviceCode: string;
+    creatorId: number;
+}
+
+export interface DeviceEmployeePayload {
+    id: number,
+    deviceId: number,
+    deviceCode: string,
+    employeeId: number,
+    apporverId: number,
+    changedFields?: string[],
+}
