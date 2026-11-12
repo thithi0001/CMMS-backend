@@ -1,7 +1,6 @@
 import {
     ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import {
     ChangeDeviceStateMsg,
     CreateDeviceDto,

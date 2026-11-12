@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { DeviceState, IntervalUnit, SourceType, RequestStatus } from '@app/shared/types/device.enum';
+import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from '@app/shared/types/device.enum';
 
 export class CreateCategoryDto {
     @IsString() @IsNotEmpty() name!: string;
@@ -268,3 +268,122 @@ export class FindAssignDeviceQueryDto extends FindQueryDto {
     )
     to?: string;
 }
+
+export class CreateRetrieveDeviceDto {
+
+}
+
+export class UpdateRetrieveDeviceDto {
+
+}
+
+export class FindRetrieveDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsBoolean() isConfirmed?: boolean;
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'from phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'from không phải ngày hợp lệ' },
+    )
+    from?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'to phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'to không phải ngày hợp lệ' },
+    )
+    to?: string;
+}
+
+export class CreateHandoverDeviceDto {
+
+}
+
+export class UpdateHandoverDeviceDto {
+
+}
+
+export class FindHandoverDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsBoolean() isHandoverd?: boolean;
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsIn(Object.values(HandoverType)) type?: HandoverType;
+    
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'from phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'from không phải ngày hợp lệ' },
+    )
+    from?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'to phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'to không phải ngày hợp lệ' },
+    )
+    to?: string;
+}
+
+export class CreateDisposeDeviceDto {
+
+}
+
+export class FindDisposeDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsInt() @Min(1) userId?: number
+    
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'from phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'from không phải ngày hợp lệ' },
+    )
+    from?: string;
+
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'to phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'to không phải ngày hợp lệ' },
+    )
+    to?: string;
+
+    @IsOptional()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'above phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    above?: string;
+    
+    @IsOptional()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'below phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    below?: string;}
+
+export class CreateDeviceEmployeeDto {
+
+}
+
+export class UpdateDeviceEmployeeDto {
+
+}
+
+export class FindDeviceEmployeeQueryDto extends FindQueryDto {
+
+}
+

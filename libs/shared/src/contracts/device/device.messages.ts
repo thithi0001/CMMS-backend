@@ -4,10 +4,17 @@ import {
     CreateAssignDeviceDto,
     CreateCategoryDto, 
     CreateDeviceDto,
+    CreateDeviceEmployeeDto,
+    CreateDisposeDeviceDto,
+    CreateHandoverDeviceDto,
+    CreateRetrieveDeviceDto,
     CreateSourceDto,
     UpdateAssignDeviceDto,
     UpdateCategoryDto,
     UpdateDeviceDto,
+    UpdateDeviceEmployeeDto,
+    UpdateHandoverDeviceDto,
+    UpdateRetrieveDeviceDto,
     UpdateSourceDto, 
 } from './device.dto';
 import { DeviceState } from "@app/shared/types/device.enum";
@@ -33,7 +40,17 @@ export interface UpdateAssignDeviceMsg { id: number, data: UpdateAssignDeviceDto
 export interface DeleteAssignDeviceMsg { id: number, actor: JwtPayload }
 
 // RETRIEVE
+export interface CreateRetrieveDeviceMsg { dto: CreateRetrieveDeviceDto, actor: JwtPayload }
+export interface UpdateRetrieveDeviceMsg { id: number, data: UpdateRetrieveDeviceDto, actor: JwtPayload }
+export interface DeleteRetrieveDeviceMsg { id: number, actor: JwtPayload }
 
 // HANDOVER
+export interface CreateHandoverDeviceMsg { dto: CreateHandoverDeviceDto, actor: JwtPayload }
+export interface UpdateHandoverDeviceMsg { id: number, data: UpdateHandoverDeviceDto, actor: JwtPayload }
 
 // DISPOSE
+export interface CreateDisposeDeviceMsg { dto: CreateDisposeDeviceDto, actor: JwtPayload }
+
+// DEVICE & EMPLOYEE
+export interface CreateDeviceEmployeeMsg { dto: CreateDeviceEmployeeDto, actor: JwtPayload }
+export interface UpdateDeviceEmployeeMsg { id: number, data: UpdateDeviceEmployeeDto, actor: JwtPayload }

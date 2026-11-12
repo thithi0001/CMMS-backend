@@ -151,6 +151,7 @@ export class CategoriesService {
             where: { id },
             data: {
                 is_active: false,
+                updated_at: new Date(),
             },
         });
         const view = toCategoryView(deleted);
