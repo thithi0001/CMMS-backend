@@ -23,6 +23,7 @@ export class ExpertisesService {
         private readonly events: ExpertiseEventsPublisher,
     ) {}
     
+    // === Nội bộ ===
     findExpertiseById(id: number) {
         return this.prisma.expertises.findUnique({
             where: { id },
@@ -38,6 +39,9 @@ export class ExpertisesService {
     }
 
     async createExpertise(dto: CreateExpertiseDto): Promise<ExpertiseView> {
+        if (await this.prisma.expertises.findUnique({ where: { code: dto.code }}))
+            throw new ConflictException('Expertise code already exists')
+        
         const expertise = await this.prisma.expertises.create({
             data: {
                 name: dto.name,
@@ -49,6 +53,7 @@ export class ExpertisesService {
         return toExpertiseView(expertise);
     }
 
+    // === RPC ===
     async findById(id: number): Promise<ExpertiseView> {
         const expertise = await this.findExpertiseById(id);
         if (!expertise)

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { 
     CreateDepartmentMsg, CreateDepartmentDto, 
     FindDepartmentQueryDto,
@@ -18,6 +18,7 @@ export class DepartmentsService {
         private readonly events: DepartmentEventsPublisher,
     ) {}
 
+    // === Nội bộ ===
     findDepartmentById(id: number) {
         return this.prisma.departments.findUnique({
             where: { id },
@@ -26,7 +27,7 @@ export class DepartmentsService {
 
     async createDepartment(dto: CreateDepartmentDto): Promise<DepartmentView> {
         if (await this.prisma.departments.findUnique({ where: { code: dto.code } })) {
-            throw new Error('Department code already exists');
+            throw new ConflictException('Department code already exists');
         }
         
         const department = await this.prisma.departments.create({
@@ -39,6 +40,7 @@ export class DepartmentsService {
         return toDepartmentView(department);
     }
 
+    // === RPC ===
     async create({ dto, actorId }: CreateDepartmentMsg): Promise<DepartmentView> {
         const department = await this.createDepartment(dto);
         this.events.created(department, actorId);
@@ -48,7 +50,7 @@ export class DepartmentsService {
     async findById(id: number): Promise<DepartmentView> {
         const department = await this.findDepartmentById(id);
         if (!department) {
-            throw new Error('Department not found');
+            throw new NotFoundException('Department not found');
         }
         return toDepartmentView(department);
     }

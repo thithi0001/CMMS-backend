@@ -1,11 +1,13 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { USER_CMD } from '@app/shared';
+import { 
+    USER_CMD, 
+    FindUserQueryDto,
+} from '@app/shared';
 import type {
     CreateUserMsg, DeactivateUserMsg, 
     UpdateRoleMsg, UpdateUserMsg,
     FindUserByIdMsg,
-    FindUserQueryDto,
 } from '@app/shared';
 import { UsersService } from "./users.service";
 

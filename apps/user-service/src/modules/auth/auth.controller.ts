@@ -1,10 +1,12 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { USER_CMD } from "@app/shared";
-import type { 
+import { 
+    USER_CMD, 
     LoginDto, 
-    ChangePasswordMsg ,
     RefreshTokenDto,
+} from "@app/shared";
+import type { 
+    ChangePasswordMsg,
 } from "@app/shared";
 import { AuthService } from "./auth.service";
 

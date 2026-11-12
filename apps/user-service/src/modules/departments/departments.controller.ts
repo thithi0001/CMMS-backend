@@ -1,9 +1,11 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { DEPARTMENT_CMD } from "@app/shared/contracts/user/user.patterns";
+import { 
+    DEPARTMENT_CMD,
+    FindDepartmentQueryDto
+} from "@app/shared";
 import type {
     CreateDepartmentMsg,
-    FindDepartmentQueryDto
 } from '@app/shared'
 import { DepartmentsService } from "./departments.service";
 
