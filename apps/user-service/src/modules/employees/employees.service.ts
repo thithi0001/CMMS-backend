@@ -24,6 +24,7 @@ export class EmployeesService {
         private readonly events: EmployeeEventsPublisher,
     ) {}
 
+    // === Nội bộ ===
     findEmployeeById(id: number) {
         return this.prisma.employees.findUnique({
             where: { id },
@@ -44,14 +45,6 @@ export class EmployeesService {
                 departments: true,
                 users: { include: { roles: true }},
             },
-        });
-    }
-
-    findEmployeeHistory(userId: number) {
-        return this.prisma.employees.findMany({
-            where: { user_id: userId },
-            include: { departments: true },
-            orderBy: { start_date: 'desc' },
         });
     }
 
@@ -90,6 +83,7 @@ export class EmployeesService {
         };
     }
 
+    // === RPC ===
     async create({ dto, actorId }: CreateEmployeeMsg): Promise<{
         user: UserView,
         employee: EmployeeView,

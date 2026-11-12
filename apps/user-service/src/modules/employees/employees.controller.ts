@@ -1,10 +1,12 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { EMPLOYEE_CMD } from "@app/shared/contracts/user/user.patterns";
+import { 
+    EMPLOYEE_CMD, 
+    FindEmployeeQueryDto
+} from "@app/shared";
 import type {
     CreateEmployeeMsg,
     EndEmployeeMsg,
-    FindEmployeeQueryDto
 } from '@app/shared'
 import { EmployeesService } from "./employees.service";
 

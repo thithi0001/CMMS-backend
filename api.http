@@ -1,0 +1,81 @@
+@baseUrl = http://localhost:3000/api
+@username = 
+@password = 
+@accessToken = {{login.response.body.$.data.accessToken}}
+@refreshToken = {{login.response.body.$.data.refreshToken}}
+@userId = {{createUser.response.body.$.data.id}}
+
+### API health check
+GET {{baseUrl}}/
+
+### Auth: login (public)
+# Lấy accessToken và refreshToken từ response để gọi các request bên dưới.
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Auth: lấy thông tin tài khoản hiện tại (cần đăng nhập)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Auth: đổi mật khẩu (cần đăng nhập)
+# Thay giá trị currentPassword/newPassword trước khi chạy.
+PATCH {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "NewPassword123"
+}
+
+### Auth: làm mới token (public)
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Users: danh sách người dùng (ADMIN hoặc MANAGER)
+GET {{baseUrl}}/users?page=1&limit=10&search=nv
+Authorization: Bearer {{accessToken}}
+
+### Users: tạo người dùng (ADMIN hoặc MANAGER)
+# @name createUser
+POST {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "username": "test.user01",
+  "password": "TestPass123",
+  "email": "test.user01@example.com",
+  "roleCode": "EMPLOYEE",
+  "fullname": "Test User",
+  "dob": "2004-01-01",
+  "phone": "0900000001"
+}
+
+### Users: lấy người dùng theo ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Users: đổi role (ADMIN)
+PATCH {{baseUrl}}/users/{{userId}}/role
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "roleCode": "TECHNICIAN"
+}
+
+### Users: vô hiệu hóa người dùng (ADMIN)
+# Chạy sau khi tạo người dùng thử nghiệm.
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}

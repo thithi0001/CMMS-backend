@@ -3,16 +3,18 @@ import {
   ParseIntPipe, Patch, Post, Query,
 } from '@nestjs/common';
 import type {
-    CreateEmployeeDto,
     CreateEmployeeMsg,
     EmployeeView,
-    EndEmployeeDto,
     EndEmployeeMsg,
-    FindEmployeeQueryDto,
     JwtPayload, Paginated,
     UserView,
 } from '@app/shared'
-import { EMPLOYEE_CMD, Role } from '@app/shared';
+import { 
+    EMPLOYEE_CMD, Role, 
+    CreateEmployeeDto,
+    EndEmployeeDto,
+    FindEmployeeQueryDto,
+} from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';

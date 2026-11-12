@@ -3,14 +3,20 @@ import {
   ParseIntPipe, Patch, Post, Query,
 } from '@nestjs/common';
 import type {
-    CreateUserDto, CreateUserMsg, DeactivateUserMsg,
-    FindUserByIdMsg, FindUserQueryDto, 
+    CreateUserMsg, DeactivateUserMsg,
+    FindUserByIdMsg, 
     JwtPayload, Paginated, 
-    UpdateRoleDto, UpdateRoleMsg, 
-    UpdateUserDto, UpdateUserMsg,
+    UpdateRoleMsg, 
+    UpdateUserMsg,
     UserView,
 } from '@app/shared';
-import { USER_CMD, Role } from '@app/shared';
+import { 
+    USER_CMD, Role, 
+    CreateUserDto, 
+    FindUserQueryDto, 
+    UpdateRoleDto, 
+    UpdateUserDto, 
+} from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -53,10 +59,25 @@ export class UsersController {
         );
     }
 
+    @Patch(':id')
+    update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateUserDto,
+        @CurrentUser() actor: JwtPayload,
+    ) {
+        return this.bus.send<UserView, UpdateUserMsg>(
+            USER_CMD.UPDATE, {
+                id,
+                data: dto,
+                actor
+            }
+        );
+    }
+
     @Roles(Role.ADMIN)
     @Patch(':id/role')
     updateRole(
-        @Param(':id', ParseIntPipe) id: number,
+        @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdateRoleDto,
         @CurrentUser() actor: JwtPayload,
     ) {
@@ -64,9 +85,9 @@ export class UsersController {
             USER_CMD.UPDATE_ROLE, {
                 id,
                 roleCode: dto.roleCode,
-                actor,
+                actor
             }
-        )
+        );
     }
 
     @Roles(Role.ADMIN)
@@ -82,5 +103,5 @@ export class UsersController {
         );
     }
 
-    // thiếu stats, update, forget-password
+    // thiếu stats, forget-password
 }
