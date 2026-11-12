@@ -5,7 +5,7 @@ export interface JwtPayload {
   username: string;
   roleId: number;
   roleCode: Role;
-  employeeId?: number;
+  employeeId: number;
   tokenType?: 'access' | 'refresh';
   iat?: number;
   exp?: number;
