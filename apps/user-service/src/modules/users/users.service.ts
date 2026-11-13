@@ -8,6 +8,7 @@ import {
     Paginated,
     UserStats, UserView,
     Role,
+    myParseDate,
 } from '@app/shared';
 import { UserEventsPublisher } from '../../messaging/publishers/user-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
@@ -79,7 +80,7 @@ export class UsersService {
                 email,
                 role_id: role.id,
                 fullname: dto.fullname,
-                dob: dto.dob,
+                dob: new Date(dto.dob),
                 phone: dto.phone,
             },
             include: { roles: true },
@@ -143,12 +144,15 @@ export class UsersService {
         const patch = {
             fullname: data.fullname,
             phone: data.phone,
-            dob: data.dob,
+            dob: myParseDate(data.dob, 'dob'),
         };
 
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
+
+        if (!changedFields.length)
+            return user;
 
         const updated = await this.prisma.users.update({
             where: { id: user.id },
@@ -156,8 +160,7 @@ export class UsersService {
             include: { roles: true },
         });
 
-        if (changedFields.length)
-                this.events.updated(id, changedFields, actor.sub);
+        this.events.updated(id, changedFields, actor.sub);
         return toUserView(updated);
 
     }

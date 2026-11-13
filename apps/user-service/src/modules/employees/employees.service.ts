@@ -9,6 +9,7 @@ import {
     Role,
     FindEmployeeQueryDto,
     Paginated,
+    myParseDate,
 } from '@app/shared';
 import { EmployeeEventsPublisher } from '../../messaging/publishers/employee-events.publisher';
 import { Prisma } from "../../prisma/generated/client";
@@ -71,8 +72,8 @@ export class EmployeesService {
                 user_id: user.id,
                 department_id: department.id,
                 position: dto.position,
-                start_date: dto.startDate,
-                end_date: dto.endDate,
+                start_date: myParseDate(dto.startDate, 'startDate') || new Date(),
+                end_date: myParseDate(dto.endDate, 'endDate'),
             },
             include: { departments: true },
         });
@@ -103,7 +104,7 @@ export class EmployeesService {
        
         const employee = await this.prisma.employees.update({
             where: { id },
-            data: { end_date: data.endDate },
+            data: { end_date: myParseDate(data.endDate, 'endDate') || new Date() },
             include: { departments: true },
         });
         const view = toEmployeeView(employee);

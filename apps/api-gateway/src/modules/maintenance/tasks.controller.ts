@@ -18,7 +18,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class TasksController {
     constructor(private readonly bus: BusService) { }
 
-    @Roles()
     @Get()
     findAll(
         @Query() query: FindTaskQueryDto,
