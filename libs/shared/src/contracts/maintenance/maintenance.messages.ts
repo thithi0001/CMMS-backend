@@ -1,10 +1,9 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
-import { Role } from "@app/shared/types/role";
 import { 
     CreateTaskDto, 
     UpdateTaskDto
 } from "./maintenance.dto";
-import { TaskStage } from "@app/shared/contracts/maintenance/maintenance.enum";
+import { TaskStage } from "@app/shared";
 
 // === TASKS ===
 export interface CreateTaskMsg { dto: CreateTaskDto, actor: JwtPayload }

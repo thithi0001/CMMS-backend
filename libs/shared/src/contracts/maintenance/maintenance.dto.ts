@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { TaskStage, TaskTag, Priority } from '@app/shared/contracts/maintenance/maintenance.enum';
+import { TaskStage, TaskTag, Priority } from '@app/shared';
 
 export class CreateTaskDto {
     @IsString() title!: string;

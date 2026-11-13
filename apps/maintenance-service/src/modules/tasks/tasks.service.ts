@@ -7,12 +7,12 @@ import {
     CreateTaskMsg, UpdateTaskMsg, DeleteTaskMsg,
     ChangeTaskStageMsg, CancelTaskMsg, TaskActionMsg,
     myParseDate,
+    TaskStage, AssigneeStatus,
 } from '@app/shared';
 import { TaskEventsPublisher } from '../../messaging/publishers/task-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toTaskView } from '../views.mapper';
-import { TaskStage, AssigneeStatus } from '@app/shared/contracts/maintenance/maintenance.enum';
 
 @Injectable()
 export class TasksService {

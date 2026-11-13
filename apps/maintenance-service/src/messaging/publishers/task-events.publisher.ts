@@ -5,8 +5,8 @@ import {
     TaskView, 
     TaskEventPayload,
     TaskStageChangePayload,
+    TaskStage
 } from '@app/shared';
-import { TaskStage } from "@app/shared/contracts/maintenance/maintenance.enum";
 
 @Injectable()
 export class TaskEventsPublisher implements OnApplicationBootstrap {
