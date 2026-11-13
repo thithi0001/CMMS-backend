@@ -30,36 +30,66 @@ export const DEVICE_CMD = {
     FIND_ALL: 'cmd.device.find_all',
     FIND_BY_ID: 'cmd.device.find_by_id',
     STATE_CHANGE: 'cmd.device.state_change',
-    CREATE_ASSIGN_DEVICE: 'cmd.device.create_assign_device',
-    UPDATE_ASSIGN_DEVICE: 'cmd.device.update_assign_device',
-    DELETE_ASSIGN_DEVICE: 'cmd.device.delete_assign_device',
-    CREATE_RETRIEVE_DEVICE: 'cmd.device.create_retrieve_device',
-    UPDATE_RETRIEVE_DEVICE: 'cmd.device.update_retrieve_device',
-    DELETE_RETRIEVE_DEVICE: 'cmd.device.delete_retrieve_device',
-    CREATE_HANDOVER_DEVICE: 'cmd.device.create_handover_device',
-    UPDATE_HANDOVER_DEVICE: 'cmd.device.update_handover_device',
-    DELETE_HANDOVER_DEVICE: 'cmd.device.delete_handover_device',
+} as const;
+
+export const ASSIGN_DEVICE_CMD = {
+    CREATE: 'cmd.assign_device.create',
+    UPDATE: 'cmd.assign_device.update',
+    DELETE: 'cmd.assign_device.delete',
+} as const;
+
+export const RETRIEVE_DEVICE_CMD = {
+    CREATE: 'cmd.retrieve_device.create',
+    UPDATE: 'cmd.retrieve_device.update',
+    DELETE: 'cmd.retrieve_device.delete',
+} as const;
+
+export const HANDOVER_DEVICE_CMD = {
+    CREATE: 'cmd.handover_device.create',
+    UPDATE: 'cmd.handover_device.update',
+    DELETE: 'cmd.handover_device.delete',
+} as const;
+
+export const DISPOSE_DEVICE_CMD = {
     DISPOSE: 'cmd.device.dispose',
-    CREATE_DEVICE_EMPLOYEE: 'cmd.device.create_device_employee',
-    UPDATE_DEVICE_EMPLOYEE: 'cmd.device.update_device_employee',
+} as const;
+
+export const DEVICE_EMPLOYEE_CMD = {
+    CREATE: 'cmd.device_employee.create',
+    UPDATE: 'cmd.device_employee.update',
 } as const;
 
 export const DEVICE_EVT = {
     CREATED: 'evt.device.created',
     UPDATED: 'evt.device.updated',
     STATE_CHANGED: 'evt.device.state_changed',
-    ASSIGN_DEVICE_CREATED: 'evt.device.assign_device_created',
-    ASSIGN_DEVICE_UPDATED: 'evt.device.assign_device_updated',
-    ASSIGN_DEVICE_DELETED: 'evt.device.assign_device_deleted',
-    RETRIEVE_DEVICE_CREATED: 'evt.device.retrieve_device_created',
-    RETRIEVE_DEVICE_UPDATED: 'evt.device.retrieve_device_updated',
-    RETRIEVE_DEVICE_DELETED: 'evt.device.retrieve_device_deleted',
-    HANDOVER_DEVICE_CREATED: 'evt.device.handover_device_created',
-    HANDOVER_DEVICE_UPDATED: 'evt.device.handover_device_updated',
-    HANDOVER_DEVICE_DELETED: 'evt.device.handover_device_deleted',
+} as const;
+
+export const ASSIGN_DEVICE_EVT = {
+    CREATED: 'evt.assign_device.created',
+    UPDATED: 'evt.assign_device.updated',
+    DELETED: 'evt.assign_device.deleted',
+} as const;
+
+export const RETRIEVE_DEVICE_EVT = {
+    CREATED: 'evt.retrieve_device.created',
+    UPDATED: 'evt.retrieve_device.updated',
+    DELETED: 'evt.retrieve_device.deleted',
+} as const;
+
+export const HANDOVER_DEVICE_EVT = {
+    CREATED: 'evt.handover_device.created',
+    UPDATED: 'evt.handover_device.updated',
+    DELETED: 'evt.handover_device.deleted',
+} as const;
+
+export const DISPOSE_DEVICE_EVT = {
     DISPOSED: 'evt.device.disposed',
-    DEVICE_EMPLOYEE_CREATED: 'evt.device.device_employee_created',
-    DEVICE_EMPLOYEE_UPDATED: 'evt.device.device_employee_updated',
+} as const;
+
+export const DEVICE_EMPLOYEE_EVT = {
+    CREATED: 'evt.device_employee.created',
+    UPDATED: 'evt.device_employee.updated',
 } as const;
 
 

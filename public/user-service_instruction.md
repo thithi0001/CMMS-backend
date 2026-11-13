@@ -976,13 +976,13 @@ Rồi khai báo `controllers: [DeviceEventsConsumer]` trong `MessagingModule`. K
 
 Giả sử dựng `device-service`:
 
-1. `libs/shared/src/contracts/device/`: `device.patterns.ts` (`DEVICE_CMD`, `DEVICE_EVT`), `device.dto.ts`, `device.messages.ts`, `device.types.ts`, `device.events.ts`, `index.ts`; bỏ comment export trong `libs/shared/src/index.ts`. Nhớ có `DEVICE_CMD.STATS` nếu report cần số liệu.
+1. `libs/shared/src/contracts/device/`: `device.patterns.ts` có patterns riêng theo domain (`DEVICE_CMD`/`DEVICE_EVT`, `ASSIGN_DEVICE_CMD`/`ASSIGN_DEVICE_EVT`, `RETRIEVE_DEVICE_CMD`/`RETRIEVE_DEVICE_EVT`, `HANDOVER_DEVICE_CMD`/`HANDOVER_DEVICE_EVT`, `DISPOSE_DEVICE_CMD`/`DISPOSE_DEVICE_EVT`, `DEVICE_EMPLOYEE_CMD`/`DEVICE_EMPLOYEE_EVT`); cùng `device.dto.ts`, `device.messages.ts`, `device.types.ts`, `device.events.ts`, `index.ts`. Bỏ comment export trong `libs/shared/src/index.ts`. Nhớ có `DEVICE_CMD.STATS` nếu report cần số liệu.
 2. `apps/device-service/prisma/schema.prisma` (generator giống hệt, đổi model), `prisma.config.ts` (đổi đường dẫn `.env`).
 3. Thêm các script `prisma:*:device` (pull/generate/studio, hoặc migrate nếu DB trống) và `start:device` trong `package.json`.
 4. Dùng database `device_db` trên Neon (đã có sẵn hoặc tạo mới), điền `apps/device-service/.env` (`DATABASE_URL`, `DIRECT_URL`), tạo `.env.example`.
 5. Nếu DB đã có bảng: `prisma db pull` rồi chỉnh tên model/field và `prisma generate`. Nếu DB trống và muốn tạo từ schema tự viết: dùng `prisma migrate dev --name init`.
 6. Chép nguyên `src/prisma/` (không sửa gì).
-7. `src/messaging/`: chép `messaging.module.ts`, đổi tên publisher thành `device-events.publisher.ts`, thay các method theo sự kiện của service; thêm `consumers/*.ts` cho sự kiện cần nhận.
+7. `src/messaging/`: đăng ký publisher riêng theo domain trong `messaging.module.ts` (ví dụ `device-events.publisher.ts`, `assign-devices-events.publisher.ts`); thêm `consumers/*.ts` cho sự kiện cần nhận.
 8. `src/modules/<domain>/`: controller (`@MessagePattern(DEVICE_CMD.*)`), service (Prisma + publisher), module.
 9. `app.module.ts`: `envFilePath: ['apps/device-service/.env', '.env']`, import `PrismaModule`, `MessagingModule`, module domain.
 10. `main.ts`: chép từ user-service, đổi `QUEUES.USER` thành `QUEUES.DEVICE`.
