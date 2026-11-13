@@ -1,18 +1,18 @@
 import {
-    ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException
+    BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import { 
     Role, Paginated, TaskView,
-    FindTaskQueryDto, UpdateTaskDto,
+    FindTaskQueryDto,
     CreateTaskMsg, UpdateTaskMsg, DeleteTaskMsg,
     ChangeTaskStageMsg, CancelTaskMsg, TaskActionMsg,
+    myParseDate,
 } from '@app/shared';
 import { TaskEventsPublisher } from '../../messaging/publishers/task-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toTaskView } from '../views.mapper';
-import { TaskStage, AssigneeStatus } from '@app/shared/types/maintenance.enum';
+import { TaskStage, AssigneeStatus } from '@app/shared/contracts/maintenance/maintenance.enum';
 
 @Injectable()
 export class TasksService {
@@ -29,11 +29,10 @@ export class TasksService {
         if (actor.roleCode !== Role.MANAGER)
             throw new UnauthorizedException('Unauthorized to perform this action');
         
-        const start = dto.scheduledStartAt === undefined ? undefined : new Date(dto.scheduledStartAt);
-        const end = dto.scheduledEndAt === undefined ? undefined : new Date(dto.scheduledEndAt);
-        if (start && end)
-            if (start > end)
-                throw new ConflictException('End must be later than Start');
+        const start = myParseDate(dto.scheduledStartAt, 'scheduledStartAt');
+        const end = myParseDate(dto.scheduledEndAt, 'scheduledEndAt');
+        if (start && end && start.getTime() >= end.getTime())
+            throw new ConflictException('End must be later than Start');
 
         const task = await this.prisma.tasks.create({
             data: {
@@ -112,7 +111,7 @@ export class TasksService {
         return isConfirmedAssignee;
     }
 
-    updateTask(id: number, data: UpdateTaskDto) {
+    updateTask(id: number, data: Prisma.tasksUpdateInput) {
         return this.prisma.tasks.update({
             where: { id }, data,
         });
@@ -125,16 +124,23 @@ export class TasksService {
         if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Forbid to update this task');
 
-        const patch = {
+        const start = myParseDate(
+            data.scheduledStartAt === undefined ? task.scheduledStartAt : data.scheduledStartAt,
+            'scheduledStartAt',
+        );
+        const end = myParseDate(
+            data.scheduledEndAt === undefined ? task.scheduledEndAt : data.scheduledEndAt,
+            'scheduledEndAt',
+        );
+        if (start && end && start.getTime() >= end.getTime())
+            throw new ConflictException('End must be later than Start');
+        
+        const patch: Prisma.tasksUpdateInput = {
             title: data.title,
             tag: data.tag,
             content: data.content,
-            scheduled_start_at: data.scheduledStartAt === undefined
-                ? undefined
-                : new Date(data.scheduledStartAt),
-            scheduled_end_at: data.scheduledEndAt === undefined
-                ? undefined
-                : new Date(data.scheduledEndAt),
+            scheduled_start_at: data.scheduledStartAt === undefined ? undefined : start,
+            scheduled_end_at: data.scheduledEndAt === undefined ? undefined : end,
         };
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)

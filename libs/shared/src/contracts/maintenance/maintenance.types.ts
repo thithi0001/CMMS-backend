@@ -1,4 +1,4 @@
-import { TaskStage, TaskTag } from "@app/shared/types/maintenance.enum";
+import { TaskStage, TaskTag } from "@app/shared/contracts/maintenance/maintenance.enum";
 
 export interface TaskView {
     id: number;

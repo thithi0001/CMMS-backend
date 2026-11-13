@@ -1,4 +1,4 @@
-import { TaskStage } from "@app/shared/types/maintenance.enum";
+import { TaskStage } from "@app/shared/contracts/maintenance/maintenance.enum";
 
 export interface TaskEventPayload {
     taskId: number;

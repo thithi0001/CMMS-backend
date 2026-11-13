@@ -4,7 +4,7 @@ import {
     CreateTaskDto, 
     UpdateTaskDto
 } from "./maintenance.dto";
-import { TaskStage } from "@app/shared/types/maintenance.enum";
+import { TaskStage } from "@app/shared/contracts/maintenance/maintenance.enum";
 
 // === TASKS ===
 export interface CreateTaskMsg { dto: CreateTaskDto, actor: JwtPayload }
