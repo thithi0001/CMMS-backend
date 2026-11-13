@@ -1,13 +1,11 @@
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
-import { 
-    TASK_CMD, 
-    FindTaskQueryDto, 
-} from '@app/shared';
+import { TASK_CMD } from '@app/shared';
 import type { 
     CreateTaskMsg, UpdateTaskMsg, DeleteTaskMsg,
     ChangeTaskStageMsg,
     CancelTaskMsg, TaskActionMsg,
+    FindTaskMsg,
 } from '@app/shared';
 import { TasksService } from "./tasks.service";
 
@@ -31,8 +29,8 @@ export class TasksController {
     }
 
     @MessagePattern(TASK_CMD.FIND_ALL)
-    findAll(@Payload() query: FindTaskQueryDto) {
-        return this.tasks.findAll(query);
+    findAll(@Payload() msg: FindTaskMsg) {
+        return this.tasks.findAll(msg);
     }
 
     @MessagePattern(TASK_CMD.FIND_BY_ID)

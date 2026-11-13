@@ -1,14 +1,14 @@
 import {
-  Body, Controller, Delete, Get, Param,
-  ParseIntPipe, Patch, Post, Query,
+    Body, Controller, Delete, Get, Param,
+    ParseIntPipe, Patch, Post, Query,
 } from '@nestjs/common';
 import type {
-  CancelTaskMsg, ChangeTaskStageDto, ChangeTaskStageMsg, CreateTaskMsg,
-  DeleteTaskMsg, FindTaskQueryDto, JwtPayload,
-  Paginated, TaskActionMsg, TaskView, UpdateTaskMsg,
+    CancelTaskMsg, ChangeTaskStageDto, ChangeTaskStageMsg, CreateTaskMsg,
+    DeleteTaskMsg, FindTaskMsg, JwtPayload,
+    Paginated, TaskActionMsg, TaskView, UpdateTaskMsg,
 } from '@app/shared';
 import {
-  CreateTaskDto, Role, TASK_CMD, UpdateTaskDto,
+    CreateTaskDto, Role, TASK_CMD, UpdateTaskDto, FindTaskQueryDto,
 } from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -20,10 +20,14 @@ export class TasksController {
 
     @Roles()
     @Get()
-    findAll(@Query() query: FindTaskQueryDto) {
-        return this.bus.send<Paginated<TaskView>, FindTaskQueryDto>(
-            TASK_CMD.FIND_ALL,
-            query,
+    findAll(
+        @Query() query: FindTaskQueryDto,
+        @CurrentUser() actor: JwtPayload,
+    ) {
+        return this.bus.send<Paginated<TaskView>, FindTaskMsg>(
+            TASK_CMD.FIND_ALL, {
+                q: query, actor,
+            }
         );
     }
 
@@ -32,8 +36,9 @@ export class TasksController {
     create(@Body() dto: CreateTaskDto, @CurrentUser() actor: JwtPayload) {
         return this.bus.send<TaskView, CreateTaskMsg>(
             TASK_CMD.CREATE, {
-            dto, actor,
-        });
+                dto, actor,
+            }
+        );
     }
 
     @Roles(Role.MANAGER)
@@ -45,8 +50,9 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, UpdateTaskMsg>(
             TASK_CMD.UPDATE, {
-            id, data: dto, actor,
-        });
+                id, data: dto, actor,
+            }
+        );
     }
 
     @Roles(Role.MANAGER)
@@ -57,8 +63,9 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, DeleteTaskMsg>(
             TASK_CMD.DELETE, {
-            id, actor,
-        });
+             id, actor,
+            }
+        );
     }
 
     @Roles(Role.TECHNICIAN)
@@ -69,15 +76,19 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, TaskActionMsg>(
             TASK_CMD.START, {
-            id, actor,
-        });
+                id, actor,
+            }
+        );
     }
 
     @Roles(Role.TECHNICIAN)
     @Post(':id/end')
     end(@Param('id', ParseIntPipe) id: number, @CurrentUser() actor: JwtPayload) {
         return this.bus.send<TaskView, TaskActionMsg>(
-            TASK_CMD.END, { id, actor });
+            TASK_CMD.END, { 
+                id, actor, 
+            }
+        );
     }
 
     @Roles(Role.MANAGER)
@@ -88,8 +99,9 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, CancelTaskMsg>(
             TASK_CMD.CANCEL, {
-            id, actor,
-        });
+                id, actor,
+            }
+        );
     }
 
     @Roles(Role.MANAGER)
@@ -100,9 +112,9 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, CancelTaskMsg>(
             TASK_CMD.REOPEN, {
-            id,
-            actor,
-        });
+                id, actor,
+            }
+        );
     }
 
     @Roles(Role.MANAGER)
@@ -114,8 +126,9 @@ export class TasksController {
     ) {
         return this.bus.send<TaskView, ChangeTaskStageMsg>(
             TASK_CMD.EVALUATE, {
-                id, data: dto, actor
-        });
+                id, data: dto, actor,
+            }
+        );
     }
 
     //   @Roles(Role.ADMIN, Role.MANAGER, Role.TECHNICIAN)

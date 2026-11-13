@@ -3,9 +3,9 @@ import {
 } from '@nestjs/common';
 import { 
     Role, Paginated, TaskView,
-    FindTaskQueryDto,
     CreateTaskMsg, UpdateTaskMsg, DeleteTaskMsg,
     ChangeTaskStageMsg, CancelTaskMsg, TaskActionMsg,
+    FindTaskMsg,
     myParseDate,
     TaskStage, AssigneeStatus,
 } from '@app/shared';
@@ -59,17 +59,18 @@ export class TasksService {
     // maintenance+device+user
     // nếu không phải ADMIN giới hạn lại trước bằng findByUserId(@CurrentUser)
     // ADMIN thì cho tìm toàn bộ
-    async findAll(q: FindTaskQueryDto): Promise<Paginated<TaskView>> {
+    async findAll({ q, actor}: FindTaskMsg ): Promise<Paginated<TaskView>> {
         const { page = 1, limit = 20 } = q;
         const dateFilter = {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
+        const userId = actor.roleCode === Role.ADMIN ? q.userId : actor.employeeId;
         const where: Prisma.tasksWhereInput = {
-            ...(q.userId && {
+            ...(userId && {
                 OR: [
-                    { creator_id: q.userId },
-                    { assignees: { some: { assignee_id: q.userId }}},
+                    { creator_id: userId },
+                    { assignees: { some: { assignee_id: userId }}},
                 ],
             }),
             ...(q.search && { title: { contains: q.search, mode: 'insensitive' }}),
