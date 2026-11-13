@@ -1,4 +1,4 @@
-import { TaskStage, TaskTag } from "@app/shared";
+import { Priority, TaskStage, TaskTag } from "@app/shared";
 
 export interface TaskView {
     id: number;
@@ -11,8 +11,8 @@ export interface TaskView {
     scheduledEndAt?: string;
     actualStartAt?: string;
     actualEndAt?: string;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface TaskDetailView {
@@ -28,7 +28,16 @@ export interface TaskDetailView {
 }
 
 export interface TicketView {
-    
+    id: number;
+    creatorId: number;
+    deviceId: number;
+    confirmerId?: number;
+    isConfirmed: boolean;
+    priority: Priority;
+    description?: string | null;
+    imgUrl?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface TaskDeviceView {

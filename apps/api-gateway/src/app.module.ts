@@ -25,7 +25,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
     BusModule,
     AuthModule,
     UsersModule,
-    MaintenanceModule
+    MaintenanceModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

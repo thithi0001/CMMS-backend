@@ -19,7 +19,7 @@ export class TasksController {
     }
 
     @MessagePattern(TASK_CMD.UPDATE)
-    udpate(@Payload() msg: UpdateTaskMsg) {
+    update(@Payload() msg: UpdateTaskMsg) {
         return this.tasks.update(msg);
     }
 

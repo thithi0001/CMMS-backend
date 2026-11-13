@@ -78,7 +78,7 @@ export class TasksService {
             ...(q.stage && { stage: q.stage }),
             ...(Object.keys(dateFilter).length > 0 ? { scheduled_start_at: dateFilter } : {}),
         };
-
+        
         const [total, items] = await this.prisma.$transaction([
             this.prisma.tasks.count({ where }),
             this.prisma.tasks.findMany({

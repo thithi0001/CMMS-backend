@@ -14,3 +14,11 @@ export interface TaskStageChangePayload {
     newStage: TaskStage;
 }
 
+export interface TicketEventPayload {
+    ticketId: number;
+    creatorId: number;
+    deviceId: number;
+    confirmerId?: number;
+    changedFields?: string[];
+}
+

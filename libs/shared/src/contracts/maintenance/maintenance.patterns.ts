@@ -19,4 +19,21 @@ export const TASK_EVT = {
     STAGE_CHANGED: 'evt.task.stage_changed',
 } as const;
 
+export const TICKET_CMD = {
+    CREATE: 'cmd.ticket.create',
+    UPDATE: 'cmd.ticket.update',
+    DELETE: 'cmd.ticket.delete',
+    FIND_ALL: 'cmd.ticket.find_all',
+    FIND_BY_ID: 'cmd.ticket.find_by_id',
+    CONFIRM: 'cmd.ticket.confirm',
+    STATS: 'cmd.ticket.stats',
+} as const;
+
+export const TICKET_EVT = {
+    CREATED: 'evt.ticket.created',
+    UPDATED: 'evt.ticket.updated',
+    DELETED: 'evt.ticket.deleted',
+    CONFIRMED: 'evt.ticket.confirmed',
+} as const;
+
 

@@ -177,7 +177,7 @@ enum event_status {
 enum priority {
   low
   medium
-  hign
+  high
 }
 
 enum proposal_status {

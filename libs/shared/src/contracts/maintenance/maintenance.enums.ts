@@ -19,7 +19,7 @@ export type TaskStage = (typeof TaskStage)[keyof typeof TaskStage];
 export const Priority = {
     LOW: 'low',
     MEDIUM: 'medium',
-    HIGN: 'hign',
+    HIGH: 'high',
 } as const;
 export type Priority = (typeof Priority)[keyof typeof Priority];
 
