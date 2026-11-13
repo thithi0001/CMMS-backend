@@ -1,20 +1,20 @@
-export const Task_tag = {
+export const TaskTag = {
     MAINTENANCE: 'maintenance',
     REPAIR: 'repair',
     HANDOVER_DEVICE: 'handover_device',
     OTHER: 'other',
 } as const;
-export type Task_tag = (typeof Task_tag)[keyof typeof Task_tag];
+export type TaskTag = (typeof TaskTag)[keyof typeof TaskTag];
 
-export const Task_stage = {
+export const TaskStage = {
     TODO: 'todo',
-    INPROGRESS: 'inprogress',
+    IN_PROGRESS: 'in_progress',
     DONE: 'done',
     CANCELLED: 'cancelled',
     PASS: 'pass',
     FAIL: 'fail',
 } as const;
-export type Task_stage = (typeof Task_stage)[keyof typeof Task_stage];
+export type TaskStage = (typeof TaskStage)[keyof typeof TaskStage];
 
 export const Priority = {
     LOW: 'low',
@@ -23,24 +23,24 @@ export const Priority = {
 } as const;
 export type Priority = (typeof Priority)[keyof typeof Priority];
 
-export const Assignee_status = {
+export const AssigneeStatus = {
     PENDING: 'pending',
     CONFIRMED: 'confirmed',
     EXPIRED: 'expired',
     CANCELLED: 'cancelled',
 } as const;
-export type Assignee_status = (typeof Assignee_status)[keyof typeof Assignee_status];
+export type AssigneeStatus = (typeof AssigneeStatus)[keyof typeof AssigneeStatus];
 
-export const Acceptance_status = {
+export const AcceptanceStatus = {
     PENDING: 'pending',
     PASS: 'pass',
     FAIL: 'fail',
 } as const;
-export type Acceptance_status = (typeof Acceptance_status)[keyof typeof Acceptance_status];
+export type AcceptanceStatus = (typeof AcceptanceStatus)[keyof typeof AcceptanceStatus];
 
-export const Proposal_status = {
+export const ProposalStatus = {
     PENDING: 'pending',
     APPROVED: 'approved',
     REJECTED: 'rejected',
 } as const;
-export type Proposal_status = (typeof Proposal_status)[keyof typeof Proposal_status];
+export type ProposalStatus = (typeof ProposalStatus)[keyof typeof ProposalStatus];

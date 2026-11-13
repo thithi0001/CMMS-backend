@@ -48,6 +48,7 @@ model damage_reports {
   approved_at DateTime?       @db.Timestamptz(6)
   created_at  DateTime?       @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?       @default(now()) @db.Timestamptz(6)
+  approver_id Int?
   tasks       tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([task_id], map: "idx_damage_reports_task_id")

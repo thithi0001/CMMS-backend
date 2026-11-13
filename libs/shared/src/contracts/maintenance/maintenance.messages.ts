@@ -4,10 +4,15 @@ import {
     CreateTaskDto, 
     UpdateTaskDto
 } from "./maintenance.dto";
+import { TaskStage } from "@app/shared/types/maintenance.enum";
 
 // === TASKS ===
-export interface CreateTaskMsg { dto: CreateTaskDto, actorId: number }
+export interface CreateTaskMsg { dto: CreateTaskDto, actor: JwtPayload }
 export interface UpdateTaskMsg { id: number, data: UpdateTaskDto, actor: JwtPayload }
+export interface TaskActionMsg { id: number, actor: JwtPayload }
+export interface DeleteTaskMsg extends TaskActionMsg {}
+export interface CancelTaskMsg extends DeleteTaskMsg {}
+export interface ChangeTaskStageMsg { id: number, newStage: TaskStage, actor: JwtPayload }
 
 // === TICKETS ===
 
