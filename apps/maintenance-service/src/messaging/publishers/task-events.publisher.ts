@@ -4,7 +4,9 @@ import {
     buildEvent, BUS_CLIENT, SERVICES, TASK_EVT,
     TaskView, 
     TaskEventPayload,
+    TaskStageChangePayload,
 } from '@app/shared';
+import { TaskStage } from "@app/shared/types/maintenance.enum";
 
 @Injectable()
 export class TaskEventsPublisher implements OnApplicationBootstrap {
@@ -29,22 +31,37 @@ export class TaskEventsPublisher implements OnApplicationBootstrap {
         });
     }
 
-    create(t: TaskView, actorId: number) {
+    created(t: TaskView, actorId: number) {
         this.publish<TaskEventPayload>(TASK_EVT.CREATED, {
-
+            taskId: t.id,
+            creatorId: t.creatorId,
+            stage: t.stage
         }, actorId);
     }
 
-    update(t: TaskView, actorId: number) {
+    updated(t: TaskView, changedFields: string[], actorId: number) {
         this.publish<TaskEventPayload>(TASK_EVT.UPDATED, {
-
+            taskId: t.id,
+            creatorId: t.creatorId,
+            stage: t.stage,
+            changedFields
         }, actorId);
     }
 
-    delete(t: TaskView, actorId: number) {
+    deleted(t: TaskView, actorId: number) {
         this.publish<TaskEventPayload>(TASK_EVT.DELETED, {
-
+            taskId: t.id,
+            creatorId: t.creatorId,
+            stage: t.stage
         }, actorId);
     }
 
+    stageChanged(t: TaskView, oldStage: TaskStage, actorId: number) {
+        this.publish<TaskStageChangePayload>(TASK_EVT.STAGE_CHANGED, {
+            taskId: t.id,
+            creatorId: t.creatorId,
+            oldStage,
+            newStage: t.stage
+        }, actorId);
+    }
 }
