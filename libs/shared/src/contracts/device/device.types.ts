@@ -1,4 +1,4 @@
-import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "@app/shared/types/device.enum";
+import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "./device.enums";
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };

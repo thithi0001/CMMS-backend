@@ -8,11 +8,11 @@ import {
     HandoverDeviceView,
     RetrieveDeviceView,
     SourceView,
+    DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType
 } from "@app/shared";
 import type { 
     categories, Prisma, sources, device_activity_histories,
 } from '../prisma/generated/client';
-import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "@app/shared/types/device.enum";
 
 export function toCategoryView(category: categories): CategoryView {
     return {

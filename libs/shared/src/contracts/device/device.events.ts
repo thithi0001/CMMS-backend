@@ -1,4 +1,4 @@
-import { DeviceState, SourceType } from "@app/shared/types/device.enum";
+import { DeviceState, SourceType } from "./device.enums";
 
 export interface CategoryEventPayload {
     categoryId: number;
@@ -61,6 +61,6 @@ export interface DeviceEmployeePayload {
     deviceId: number,
     deviceCode: string,
     employeeId: number,
-    apporverId: number,
+    approverId: number,
     changedFields?: string[],
 }

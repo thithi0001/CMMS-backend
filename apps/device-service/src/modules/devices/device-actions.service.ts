@@ -8,13 +8,13 @@ import {
     CreateHandoverDeviceMsg, FindHandoverDeviceQueryDto, UpdateHandoverDeviceMsg, HandoverDeviceView,
     CreateDisposeDeviceMsg, FindDisposeDeviceQueryDto, DisposeDeviceView,
     CreateDeviceEmployeeMsg, FindDeviceEmployeeQueryDto, UpdateDeviceEmployeeMsg,DeleteHandoverDeviceMsg, DeviceEmployeeView,
+    DeviceState, RequestStatus,
 } from '@app/shared';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
 import { toAssignDeviceView, toDeviceEmployeeView, toDisposeDeviceView, toHandoverDeviceView, toRetrieveDeviceView } from '../views.mapper';
-import { DeviceState, RequestStatus } from '@app/shared/types/device.enum';
 import { DevicesService } from './devices.service';
 
 @Injectable()

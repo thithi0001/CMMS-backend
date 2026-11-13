@@ -4,12 +4,10 @@ import {
     IsEmail, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString,
     Matches, Max, MaxLength, Min, MinLength
 } from 'class-validator';
-import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
 import { 
-    DeviceState, IntervalUnit, SourceType, RequestStatus, 
-    HandoverType, 
-} from '@app/shared/types/device.enum';
+    DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType, 
+} from './device.enums';
 
 export class CreateCategoryDto {
     @IsString() @IsNotEmpty() name!: string;

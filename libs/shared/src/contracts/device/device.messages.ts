@@ -1,5 +1,4 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
-import { Role } from "@app/shared/types/role";
 import { 
     CreateAssignDeviceDto,
     CreateCategoryDto, 
@@ -17,7 +16,7 @@ import {
     UpdateRetrieveDeviceDto,
     UpdateSourceDto, 
 } from './device.dto';
-import { DeviceState } from "@app/shared/types/device.enum";
+import { DeviceState } from "./device.enums";
 
 // === CATEGORIES ===
 export interface CreateCategoryMsg { dto: CreateCategoryDto, actor: JwtPayload }

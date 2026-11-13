@@ -8,8 +8,8 @@ import {
     HandoverDeviceView, HandoverDevicePayload,
     DisposeDeviceView, DisposeDevicePayload,
     DeviceEmployeeView, DeviceEmployeePayload,
+    DeviceState,
 } from '@app/shared';
-import { DeviceState } from "@app/shared/types/device.enum";
 
 @Injectable()
 export class DeviceEventsPublisher implements OnApplicationBootstrap {
@@ -135,7 +135,7 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
             deviceId: d.device.id,
             deviceCode: d.device.code,
             employeeId: d.employeeId,
-            apporverId: d.approverId
+            approverId: d.approverId
         }, actorId);
     }
     deviceEmployeeUpdated(d: DeviceEmployeeView, changedFields: string[], actorId: number) {
@@ -144,7 +144,7 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
             deviceId: d.device.id,
             deviceCode: d.device.code,
             employeeId: d.employeeId,
-            apporverId: d.approverId,
+            approverId: d.approverId,
             changedFields
         }, actorId);
     }

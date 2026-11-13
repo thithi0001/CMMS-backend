@@ -2,15 +2,12 @@ import {
     ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
 import {
-    ChangeDeviceStateMsg,
-    CreateDeviceDto,
-    CreateDeviceMsg,
-    DeviceHistoryView,
-    DeviceView,
-    FindDeviceHistoryDto,
-    FindDeviceQueryDto,
+    CreateDeviceDto, 
+    FindDeviceHistoryDto, FindDeviceQueryDto,
+    CreateDeviceMsg, UpdateDeviceMsg, ChangeDeviceStateMsg,
+    DeviceHistoryView, DeviceView,
     Paginated,
-    UpdateDeviceMsg,
+    SourceType,
 } from '@app/shared';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
@@ -18,7 +15,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { toDeviceHistoryView, toDeviceView } from '../views.mapper';
 import { SourcesService } from '../sources/sources.service';
 import { CategoriesService } from '../categories/categories.service';
-import { SourceType } from '@app/shared/types/device.enum';
 
 @Injectable()
 export class DevicesService {
