@@ -24,6 +24,10 @@ export class UpdateTaskDto {
     @IsOptional() @IsDateString() scheduledEndAt?: string;
 }
 
+export class ChangeTaskStageDto {
+    @IsIn(Object.values(TaskStage)) newStage!: TaskStage;
+}
+
 export class FindTaskQueryDto extends FindQueryDto {
     // search: title, deviceCode:device-service->deviceId, employeeCode/username:user-service->userId
     @IsOptional() @IsInt() @Min(1) userId?: number;

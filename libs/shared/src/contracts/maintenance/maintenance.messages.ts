@@ -1,5 +1,6 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
 import { 
+    ChangeTaskStageDto,
     CreateTaskDto, 
     UpdateTaskDto
 } from "./maintenance.dto";
@@ -11,7 +12,7 @@ export interface UpdateTaskMsg { id: number, data: UpdateTaskDto, actor: JwtPayl
 export interface TaskActionMsg { id: number, actor: JwtPayload }
 export interface DeleteTaskMsg extends TaskActionMsg {}
 export interface CancelTaskMsg extends DeleteTaskMsg {}
-export interface ChangeTaskStageMsg { id: number, newStage: TaskStage, actor: JwtPayload }
+export interface ChangeTaskStageMsg { id: number, data: ChangeTaskStageDto, actor: JwtPayload }
 
 // === TICKETS ===
 

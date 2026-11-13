@@ -181,13 +181,13 @@ export class TasksService {
 
     private async changeStage(
         oldStage: TaskStage,
-        { id, newStage, actor }: ChangeTaskStageMsg,
+        { id, data, actor }: ChangeTaskStageMsg,
         actualTimes: { actual_start_at?: Date; actual_end_at?: Date } = {},
     ): Promise<TaskView> {
         const updated = await this.prisma.$transaction(async tx => {
             const result = await tx.tasks.updateMany({
                 where: { id, stage: oldStage },
-                data: { stage: newStage, ...actualTimes },
+                data: { stage: data.newStage, ...actualTimes },
             });
 
             if (result.count === 0) {
@@ -218,7 +218,11 @@ export class TasksService {
 
         return this.changeStage(
             task.stage,
-            { id, newStage: TaskStage.IN_PROGRESS, actor },
+            { 
+                id, 
+                data: { newStage: TaskStage.IN_PROGRESS }, 
+                actor 
+            },
             { actual_start_at: new Date() },
         );
     }
@@ -234,7 +238,11 @@ export class TasksService {
 
         return this.changeStage(
             task.stage,
-            { id, newStage: TaskStage.DONE, actor },
+            { 
+                id, 
+                data: { newStage: TaskStage.DONE }, 
+                actor 
+            },
             { actual_end_at: new Date() },
         );
     }
@@ -248,7 +256,11 @@ export class TasksService {
 
         return this.changeStage(
             task.stage, 
-            { id, newStage: TaskStage.CANCELLED, actor }
+            { 
+                id, 
+                data: { newStage: TaskStage.CANCELLED }, 
+                actor 
+            }
         );
     }
 
@@ -261,21 +273,25 @@ export class TasksService {
 
         return this.changeStage(
             task.stage, 
-            { id, newStage: TaskStage.TODO, actor }
+            { 
+                id, 
+                data: { newStage: TaskStage.TODO }, 
+                actor 
+            }
         );
     }
 
-    async evaluate({ id, newStage, actor}: ChangeTaskStageMsg): Promise<TaskView> {
+    async evaluate({ id, data, actor}: ChangeTaskStageMsg): Promise<TaskView> {
         // đánh giá PASS hoặc FAIL
         const task = await this.findById(id);
         if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.DONE)
             throw new ForbiddenException('Can only evaluate a DONE task');
-        if (newStage !== TaskStage.PASS && newStage !== TaskStage.FAIL)
+        if (data.newStage !== TaskStage.PASS && data.newStage !== TaskStage.FAIL)
             throw new ForbiddenException('A task can only be evaluated as PASS or FAIL.');
 
-        return this.changeStage(task.stage, { id, newStage, actor });
+        return this.changeStage(task.stage, { id, data, actor });
     }
 
     async stats() {
