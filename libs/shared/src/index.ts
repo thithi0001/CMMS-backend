@@ -6,6 +6,7 @@ export * from './types/role';
 export * from './types/jwt-payload';
 export * from './types/pagination';
 export * from './types/find-query';
+export * from './ultilies';
 
 // Contracts: bỏ comment từng dòng khi dựng service tương ứng
 export * from './contracts/user';
