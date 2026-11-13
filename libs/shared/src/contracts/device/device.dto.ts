@@ -11,50 +11,22 @@ import {
 
 export class CreateCategoryDto {
     @IsString() @IsNotEmpty() name!: string;
-
     @IsString() @IsNotEmpty() code!: string;
-    
     @IsOptional() @IsString() description?: string;
-    
-    @IsOptional()
-    @IsInt() @Min(1)
-    intervalValue?: number;
-    
-    @IsOptional()
-    @IsIn(Object.values(IntervalUnit))
-    intervalUnit?: IntervalUnit;
-    
-    @IsOptional()
-    @IsInt() @Min(1)
-    depreciationPeriodMinMonths?: number;
-    
-    @IsOptional()
-    @IsInt() @Min(1)
-    depreciationPeriodMaxMonths?: number;
+    @IsOptional() @IsInt() @Min(1) intervalValue?: number;
+    @IsOptional() @IsIn(Object.values(IntervalUnit)) intervalUnit?: IntervalUnit;
+    @IsOptional() @IsInt() @Min(1) depreciationPeriodMinMonths?: number;
+    @IsOptional() @IsInt() @Min(1) depreciationPeriodMaxMonths?: number;
 }
 
 export class UpdateCategoryDto {
     @IsOptional() @IsString() name?: string;
-
     @IsOptional() @IsString() code?: string;
-
     @IsOptional() @IsString() description?: string;
-
-    @IsOptional()
-    @IsInt() @Min(1)
-    intervalValue?: number;
-
-    @IsOptional()
-    @IsIn(Object.values(IntervalUnit))
-    intervalUnit?: IntervalUnit;
-
-    @IsOptional()
-    @IsInt() @Min(1)
-    depreciationPeriodMinMonths?: number;
-    
-    @IsOptional()
-    @IsInt() @Min(1)
-    depreciationPeriodMaxMonths?: number;
+    @IsOptional() @IsInt() @Min(1) intervalValue?: number;
+    @IsOptional() @IsIn(Object.values(IntervalUnit)) intervalUnit?: IntervalUnit;
+    @IsOptional() @IsInt() @Min(1) depreciationPeriodMinMonths?: number;
+    @IsOptional() @IsInt() @Min(1) depreciationPeriodMaxMonths?: number;
 }
 
 export class FindCategoryQueryDto extends FindQueryDto {
@@ -75,23 +47,15 @@ export class FindSourceQueryDto extends FindQueryDto {
 }
 
 export class CreateDeviceDto {
-    @IsNotEmpty()
-    @IsInt() @Min(1)
-    categoryId!: number;
-
-    @IsNotEmpty()
-    @IsInt() @Min(1)
-    manufacturerId!: number;
-
-    @IsNotEmpty()
-    @IsInt() @Min(1)
-    supplierId!: number;
-
+    @IsNotEmpty() @IsInt() @Min(1) categoryId!: number;
+    @IsNotEmpty() @IsInt() @Min(1) manufacturerId!: number;
+    @IsNotEmpty() @IsInt() @Min(1) supplierId!: number;
     @IsNotEmpty() @IsString() code!: string;
-
     @IsOptional() @IsString() model?: string;
-
     @IsOptional() @IsString() serialNumber?: string;
+    @IsOptional() @IsObject() specifications?: Record<string, string>;
+    @IsOptional() @IsString() imgUrl?: string;
+    @IsOptional() @IsString() installLocation?: string;
 
     @IsOptional()
     @Matches(/^\d{4}-\d{2}-\d{2}$/, {
@@ -126,27 +90,12 @@ export class CreateDeviceDto {
         message: 'originalCost phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
     })
     originalCost?: string;
-
-    @IsOptional() @IsObject() specifications?: Record<string, string>;
-
-    @IsOptional() @IsString() imgUrl?: string;
-
-    @IsOptional() @IsString() installLocation?: string;
 }
 
 export class UpdateDeviceDto {
-    @IsOptional()
-    @IsInt() @Min(1)
-    categoryId?: number;
-
-    @IsOptional()
-    @IsInt() @Min(1)
-    manufacturerId?: number;
-
-    @IsOptional()
-    @IsInt() @Min(1)
-    supplierId?: number;
-    
+    @IsOptional() @IsInt() @Min(1) categoryId?: number;
+    @IsOptional() @IsInt() @Min(1) manufacturerId?: number;
+    @IsOptional() @IsInt() @Min(1) supplierId?: number;
     @IsOptional() @IsString() code?: string;
     @IsOptional() @IsString() model?: string;
     @IsOptional() @IsString() serialNumber?: string;
@@ -254,6 +203,7 @@ export class FindHandoverDeviceQueryDto extends FindQueryDto {
 
 export class CreateDisposeDeviceDto {
     @IsInt() @Min(1) deviceId!: number;
+    @IsOptional() @IsString() reason?: string;
     
     @Matches(/^\d{4}-\d{2}-\d{2}$/, {
         message: 'disposalDate phải có định dạng YYYY-MM-DD',
@@ -268,9 +218,7 @@ export class CreateDisposeDeviceDto {
     @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
         message: 'disposalValue phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
     })
-    disposalValue!: string;
-    
-    @IsOptional() @IsString() reason?: string;
+    disposalValue!: string;    
 }
 
 export class FindDisposeDeviceQueryDto extends FindQueryDto {
