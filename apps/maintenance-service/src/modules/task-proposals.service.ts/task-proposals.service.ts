@@ -69,12 +69,11 @@ export class TaskProposalsService {
         if (actor.roleCode !== Role.TECHNICIAN)
             throw new UnauthorizedException('Unauthorized to perform this action');
         const task = await this.tasks.findById(dto.taskId);
-        if (!(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
+        if (!(await this.tasks.isAssignedToTask(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.TODO)
             throw new ForbiddenException('Forbid to create task proposal');
 
-        Kiểm tra kiểu chóa gì
         const d = await this.prisma.task_proposals.create({
             data: {
                 creator_id: actor.employeeId,
