@@ -92,7 +92,7 @@ export class AssigneesService {
         const assignee = await this.findById(id);
         if (assignee.status !== AssigneeStatus.PENDING)
             throw new ForbiddenException('Forbid to update this assignee');
-        const task = await this.tasks.findById(id);
+        const task = await this.tasks.findById(assignee.taskId);
 
         let patch: Prisma.assigneesUpdateInput = {};
         if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === assignee.assigneeId) {
@@ -100,7 +100,7 @@ export class AssigneesService {
                 throw new ConflictException('Cannot pending an assignee form');
             // TECHNICIAN xác nhận có làm hay không
             patch = { status: data.status };
-        } else if (actor.roleCode !== Role.MANAGER && actor.employeeId !== task.creatorId) {
+        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
             // MANAGER đổi deadline
             patch = { confirmation_deadline: myParseDate(data.deadline, 'deadline') };
         } else throw new UnauthorizedException('Unauthorized to perform this action');
@@ -119,8 +119,8 @@ export class AssigneesService {
         const assignee = await this.findById(id);
         if (assignee.status !== AssigneeStatus.PENDING)
             throw new ForbiddenException('Forbid to delete this assignee');
-        const task = await this.tasks.findById(id);
-        if (actor.roleCode !== Role.MANAGER && actor.employeeId !== task.creatorId)
+        const task = await this.tasks.findById(assignee.taskId);
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.assignees.delete({ where: { id }});
