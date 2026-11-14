@@ -3,9 +3,8 @@ import { ClientProxy } from "@nestjs/microservices";
 import {
     buildEvent, BUS_CLIENT, SERVICES, TASK_EVT,
     TaskView, 
-    TaskEventPayload,
-    TaskStageChangePayload,
-    TaskStage
+    TaskEventPayload, TaskStageChangePayload,
+    TaskStage,
 } from '@app/shared';
 
 @Injectable()
