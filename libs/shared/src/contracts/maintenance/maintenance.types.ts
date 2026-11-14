@@ -1,4 +1,4 @@
-import { Priority, TaskStage, TaskTag, AcceptanceStatus } from "./maintenance.enums";
+import { Priority, TaskStage, TaskTag, AcceptanceStatus, AssigneeStatus, ProposalStatus } from "./maintenance.enums";
 
 export interface TaskView {
     id: number;
@@ -50,7 +50,17 @@ export interface TaskProposalView {
 }
 
 export interface DamageReportView {
-    
+    id: number;
+    creatorId: number;
+    taskId: number;
+    deviceId: number;
+    confirmerId?: number;
+    content?: string | null;
+    status: ProposalStatus;
+    confirmedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+
 }
 
 export interface DeviceHandoverView {
@@ -78,5 +88,12 @@ export interface AcceptanceView {
 }
 
 export interface AssigneeView {
-    
+    id: number;
+    assigneeId: number;
+    taskId: number;
+    status: AssigneeStatus;
+    deadline?: string;
+    confirmedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }

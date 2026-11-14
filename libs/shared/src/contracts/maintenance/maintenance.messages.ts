@@ -2,12 +2,18 @@ import { JwtPayload } from "@app/shared/types/jwt-payload";
 import { 
     ChangeTaskStageDto,
     CreateAcceptanceDto,
+    CreateAssigneeDto,
+    CreateDamageReportDto,
     CreateTaskDto, 
     CreateTicketDto, 
     FindAcceptanceQueryDto, 
+    FindAssigneeQueryDto, 
+    FindDamageReportQueryDto, 
     FindTaskQueryDto, 
     FindTicketQueryDto, 
     UpdateAcceptanceDto, 
+    UpdateAssigneeDto, 
+    UpdateDamageReportDto, 
     UpdateTaskDto,
     UpdateTicketDto
 } from "./maintenance.dto";
@@ -33,7 +39,10 @@ export interface FindTicketMsg { q: FindTicketQueryDto, actor: JwtPayload }
 
 
 // === DAMAGE REPORTS ===
-
+export interface CreateDamageReportMsg { dto: CreateDamageReportDto, actor: JwtPayload }
+export interface UpdateDamageReportMsg { id: number, data: UpdateDamageReportDto, actor: JwtPayload }
+export interface DeleteDamageReportMsg { id: number, actor: JwtPayload }
+export interface FindDamageReportMsg { q: FindDamageReportQueryDto, actor: JwtPayload }
 
 // === DISPOSE PROPOSALS ===
 
@@ -45,4 +54,8 @@ export interface DeleteAcceptanceMsg { id: number, actor: JwtPayload }
 export interface FindAcceptanceMsg { q: FindAcceptanceQueryDto, actor: JwtPayload }
 
 // === ASSIGNEES ===
+export interface CreateAssigneeMsg { dto: CreateAssigneeDto, actor: JwtPayload }
+export interface UpdateAssigneeMsg { id: number, data: UpdateAssigneeDto, actor: JwtPayload }
+export interface DeleteAssigneeMsg { id: number, actor: JwtPayload }
+export interface FindAssigneeMsg { q: FindAssigneeQueryDto, actor: JwtPayload }
 

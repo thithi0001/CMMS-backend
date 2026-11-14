@@ -28,3 +28,18 @@ export interface AcceptanceEventPayload {
     taskId: number;
     changedFields?: string[];
 }
+
+export interface AssigneeEventPayload {
+    id: number;
+    assigneeId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface DamageReportEventPayload {
+    reportId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+

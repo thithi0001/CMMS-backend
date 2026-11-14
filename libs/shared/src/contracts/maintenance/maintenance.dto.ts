@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { TaskStage, TaskTag, Priority, AcceptanceStatus } from './maintenance.enums';
+import { TaskStage, TaskTag, Priority, AcceptanceStatus, AssigneeStatus, ProposalStatus } from './maintenance.enums';
 
 export class CreateTaskDto {
     @IsString() title!: string;
@@ -57,73 +57,73 @@ export class FindTicketQueryDto extends FindQueryDto {
 }
 
 export class CreateAssigneeDto {
-    assigneeId
-    taskId
-    deadline
+    @IsInt() @Min(1) assigneeId!: number;
+    @IsInt() @Min(1) taskId!: number;
+    @IsOptional() @IsDateString() deadline?: string;
 }
 
 export class UpdateAssigneeDto {
-    status
-    deadline
+    @IsOptional() @IsIn(Object.values(AssigneeStatus)) status?: AssigneeStatus;
+    @IsOptional() @IsDateString() deadline?: string;
 }
 
 export class FindAssigneeQueryDto extends FindQueryDto {
-    userId
-    taskId
-    status
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
+    @IsOptional() @IsIn(Object.values(AssigneeStatus)) status?: AssigneeStatus;
 }
 
-export class CreaeteTaskProposalDto {
-    taskId
-    content
+export class CreateTaskProposalDto {
+    @IsInt() @Min(1) taskId!: number;
+    @IsOptional() @IsString() content?: string;
 }
 
 export class UpdateTaskProposalDto {
-    content
-    managerReview
-    status
+    @IsOptional() @IsString() content?: string;
+    @IsOptional() @IsString() managerReview?: string;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
-export class FindTaskProposalQueryDto {
-    userId
-    taskId
-    status
+export class FindTaskProposalQueryDto extends FindQueryDto {
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
 export class CreateDamageReportDto {
-    taskId
-    deviceId
-    content
+    @IsInt() @Min(1) taskId!: number;
+    @IsInt() @Min(1) deviceId!: number;
+    @IsOptional() @IsString() content?: string;
 }
 
 export class UpdateDamageReportDto {
-    content
-    status
+    @IsOptional() @IsString() content?: string;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
-export class FindDamageReportQueryDto {
-    userId
-    taskId
-    deviceId
-    status
+export class FindDamageReportQueryDto extends FindQueryDto {
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
+    @IsOptional() @IsInt() @Min(1) deviceId?: number;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
 export class CreateDisposeProposalDto {
-    taskId
-    deviceId
-    content
+    @IsInt() @Min(1) taskId!: number;
+    @IsInt() @Min(1) deviceId!: number;
+    @IsOptional() @IsString() content?: string;
 }
 
 export class UpdateDisposeProposalDto {
-    content
-    status
+    @IsOptional() @IsString() content?: string;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
 export class FindDisposeProposalQueryDto extends FindQueryDto {
-    userId
-    taskId
-    deviceId
-    status
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
+    @IsOptional() @IsInt() @Min(1) deviceId?: number;
+    @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
 
 export class CreateAcceptanceDto {

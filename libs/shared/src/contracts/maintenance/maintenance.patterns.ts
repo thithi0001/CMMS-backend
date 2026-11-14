@@ -50,4 +50,32 @@ export const ACCEPTANCE_EVT = {
     DELETED: 'evt.acceptance.deleted',
 } as const;
 
+export const ASSIGNEE_CMD = {
+    CREATE: 'cmd.assignee.create',
+    UPDATE: 'cmd.assignee.update',
+    DELETE: 'cmd.assignee.delete',
+    FIND_ALL: 'cmd.assignee.find_all',
+    FIND_BY_ID: 'cmd.assignee.find_by_id',
+} as const;
+
+export const ASSIGNEE_EVT = {
+    CREATED: 'evt.assignee.created',
+    UPDATED: 'evt.assignee.updated',
+    DELETED: 'evt.assignee.deleted',
+} as const;
+
+export const DAMAGE_REPORT_CMD = {
+    CREATE: 'cmd.damage_report.create',
+    UPDATE: 'cmd.damage_report.update',
+    DELETE: 'cmd.damage_report.delete',
+    FIND_ALL: 'cmd.damage_report.find_all',
+    FIND_BY_ID: 'cmd.damage_report.find_by_id',
+} as const;
+
+export const DAMAGE_REPORT_EVT = {
+    CREATED: 'evt.damage_report.created',
+    UPDATED: 'evt.damage_report.updated',
+    DELETED: 'evt.damage_report.deleted',
+} as const;
+
 
