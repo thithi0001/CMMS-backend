@@ -22,7 +22,10 @@ export class TasksService {
     ) {}
 
     findTaskById(id: number) {
-        return this.prisma.tasks.findUnique({ where: { id }});
+        return this.prisma.tasks.findUnique({ 
+            where: { id },
+            include: { task_device: { select: { device_id: true }}},
+        });
     }
 
     async create({ dto, actor }: CreateTaskMsg): Promise<TaskView> {
@@ -43,6 +46,7 @@ export class TasksService {
                 scheduled_start_at: start,
                 scheduled_end_at: end,
             },
+            include: { task_device: { select: { device_id: true }}},
         });
         const view = toTaskView(task);
         this.events.created(view, actor.sub);
@@ -86,7 +90,8 @@ export class TasksService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { scheduled_start_at: 'desc' },
-            })
+                include: { task_device: { select: { device_id: true }}},
+            }),
         ]);
 
         return {
@@ -112,9 +117,26 @@ export class TasksService {
         return isConfirmedAssignee;
     }
 
+    async isAssignedToTask(taskId: number, employeeId: number): Promise<boolean> {
+        const assignees = await this.prisma.assignees.findMany({
+            where: { task_id: taskId },
+            select: {
+                assignee_id: true,
+                status: true,
+            },
+        });
+        const isAssignedToTask = assignees.some(
+            assignee =>
+                assignee.assignee_id === employeeId
+        );
+
+        return isAssignedToTask;
+    }
+
     updateTask(id: number, data: Prisma.tasksUpdateInput) {
         return this.prisma.tasks.update({
             where: { id }, data,
+            include: { task_device: { select: { device_id: true }}},
         });
     }
 
@@ -200,7 +222,10 @@ export class TasksService {
                 throw new ConflictException('Task stage changed; reload and retry');
             }
 
-            return tx.tasks.findUniqueOrThrow({ where: { id } });
+            return tx.tasks.findUniqueOrThrow({ 
+                where: { id },
+                include: { task_device: { select: { device_id: true }}},
+            });
         });
         const view = toTaskView(updated);
         this.events.stageChanged(view, oldStage, actor.sub);

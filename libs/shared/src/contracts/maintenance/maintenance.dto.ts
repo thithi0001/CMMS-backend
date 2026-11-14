@@ -92,7 +92,6 @@ export class FindTaskProposalQueryDto extends FindQueryDto {
 
 export class CreateDamageReportDto {
     @IsInt() @Min(1) taskId!: number;
-    @IsInt() @Min(1) deviceId!: number;
     @IsOptional() @IsString() content?: string;
 }
 
@@ -110,7 +109,6 @@ export class FindDamageReportQueryDto extends FindQueryDto {
 
 export class CreateDisposeProposalDto {
     @IsInt() @Min(1) taskId!: number;
-    @IsInt() @Min(1) deviceId!: number;
     @IsOptional() @IsString() content?: string;
 }
 

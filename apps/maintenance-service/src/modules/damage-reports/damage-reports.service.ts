@@ -79,12 +79,14 @@ export class DamageReportsService {
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.IN_PROGRESS)
             throw new ForbiddenException('Forbid to create damage report');
+        if (!task.deviceId)
+            throw new ConflictException('Device is required');
 
         const d = await this.prisma.damage_reports.create({
             data: {
                 creator_id: actor.employeeId,
                 task_id: task.id,
-                device_id: dto.deviceId,
+                device_id: task.deviceId,
                 content: dto.content,
             },
         });
@@ -107,11 +109,11 @@ export class DamageReportsService {
         if (data.status === ProposalStatus.PENDING)
             throw new ConflictException('Cannot pending a damage report');
 
+        const task = await this.tasks.findById(d.taskId);
         let patch: Prisma.damage_reportsUpdateInput = {};
         if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === d.creatorId) {
             patch = { content: data.content };
-        } else if () {
-            // check kiểu chóa gì đây
+        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
             patch = {
                 status: data.status,
                 confirmer_id: actor.employeeId,

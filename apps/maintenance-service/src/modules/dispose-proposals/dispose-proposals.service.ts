@@ -74,12 +74,14 @@ export class DisposeProposalsService {
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.IN_PROGRESS)
             throw new ForbiddenException('Forbid to create dispose proposal');
+        if (!task.deviceId)
+            throw new ConflictException('Device is required');
 
         const d = await this.prisma.dispose_proposals.create({
             data: {
                 creator_id: actor.employeeId,
                 task_id: task.id,
-                device_id: dto.deviceId,
+                device_id: task.deviceId,
                 content: dto.content,
             },
         });

@@ -12,15 +12,20 @@ import type {
     TaskProposalView
 } from '@app/shared';
 import type { 
-    tasks, tickets, 
-    acceptance_reports, assignees, task_proposals, dispose_proposals, damage_reports, 
+    Prisma,
+    tickets, damage_reports, 
+    acceptance_reports, assignees, 
+    task_proposals, dispose_proposals, 
 } from '../prisma/generated/client';
 
-type thêm deviceId
-export function toTaskView(task: tasks): TaskView {
+type TaskWithDevice = Prisma.tasksGetPayload<{
+    include: { task_device: { select: { device_id: true }}};
+}>;
+export function toTaskView(task: TaskWithDevice): TaskView {
     return {
         id: task.id,
         creatorId: task.creator_id,
+        deviceId: task.task_device?.device_id,
         tag: task.tag as TaskTag,
         stage: task.stage as TaskStage,
         title: task.title,
