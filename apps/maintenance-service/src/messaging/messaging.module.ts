@@ -6,6 +6,8 @@ import { TaskEventsPublisher } from './publishers/task-events.publisher';
 import { AcceptanceEventsPublisher } from './publishers/acceptance-events.publisher';
 import { AssigneeEventsPublisher } from './publishers/assignee-events.publisher';
 import { DamageReportEventsPublisher } from './publishers/damage-report-events.publisher';
+import { DisposeProposalEventsPublisher } from './publishers/dispose-proposal-events.publisher';
+import { TaskProposalEventsPublisher } from './publishers/task-proposal-events.publisher';
 
 @Global()
 @Module({
@@ -17,6 +19,6 @@ import { DamageReportEventsPublisher } from './publishers/damage-report-events.p
                 busClientOptions(config.getOrThrow<string>('RABBITMQ_URL')),
         }]),
     ],
-    providers: [TaskEventsPublisher, AcceptanceEventsPublisher, AssigneeEventsPublisher, DamageReportEventsPublisher],
-    exports: [TaskEventsPublisher, AcceptanceEventsPublisher, AssigneeEventsPublisher, DamageReportEventsPublisher],
+    providers: [TaskEventsPublisher, AcceptanceEventsPublisher, AssigneeEventsPublisher, DamageReportEventsPublisher, DisposeProposalEventsPublisher, TaskProposalEventsPublisher],
+    exports: [TaskEventsPublisher, AcceptanceEventsPublisher, AssigneeEventsPublisher, DamageReportEventsPublisher, DisposeProposalEventsPublisher, TaskProposalEventsPublisher],
 }) export class MessagingModule {}
