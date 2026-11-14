@@ -1,10 +1,13 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
 import { 
     ChangeTaskStageDto,
+    CreateAcceptanceDto,
     CreateTaskDto, 
     CreateTicketDto, 
+    FindAcceptanceQueryDto, 
     FindTaskQueryDto, 
     FindTicketQueryDto, 
+    UpdateAcceptanceDto, 
     UpdateTaskDto,
     UpdateTicketDto
 } from "./maintenance.dto";
@@ -36,7 +39,10 @@ export interface FindTicketMsg { q: FindTicketQueryDto, actor: JwtPayload }
 
 
 // === ACCEPTANCES ===
-
+export interface CreateAcceptanceMsg { dto: CreateAcceptanceDto, actor: JwtPayload }
+export interface UpdateAcceptanceMsg { id: number, data: UpdateAcceptanceDto, actor: JwtPayload }
+export interface DeleteAcceptanceMsg { id: number, actor: JwtPayload }
+export interface FindAcceptanceMsg { q: FindAcceptanceQueryDto, actor: JwtPayload }
 
 // === ASSIGNEES ===
 

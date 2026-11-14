@@ -36,4 +36,18 @@ export const TICKET_EVT = {
     CONFIRMED: 'evt.ticket.confirmed',
 } as const;
 
+export const ACCEPTANCE_CMD = {
+    CREATE: 'cmd.acceptance.create',
+    UPDATE: 'cmd.acceptance.update',
+    DELETE: 'cmd.acceptance.delete',
+    FIND_ALL: 'cmd.acceptance.find_all',
+    FIND_BY_ID: 'cmd.acceptance.find_by_id',
+} as const;
+
+export const ACCEPTANCE_EVT = {
+    CREATED: 'evt.acceptance.created',
+    UPDATED: 'evt.acceptance.updated',
+    DELETED: 'evt.acceptance.deleted',
+} as const;
+
 

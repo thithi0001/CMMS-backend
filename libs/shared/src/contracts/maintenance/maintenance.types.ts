@@ -1,8 +1,9 @@
-import { Priority, TaskStage, TaskTag } from "@app/shared";
+import { Priority, TaskStage, TaskTag, AcceptanceStatus } from "./maintenance.enums";
 
 export interface TaskView {
     id: number;
     creatorId: number; // <- user-service
+    deviceId?: number;
     tag: TaskTag;
     stage: TaskStage;
     title: string;
@@ -65,7 +66,15 @@ export interface DisposeProposalView {
 }
 
 export interface AcceptanceView {
-    
+    id: number;
+    creatorId: number;
+    taskId: number;
+    content?: string;
+    managerReview?: string;
+    status: AcceptanceStatus;
+    approvedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface AssigneeView {

@@ -1,10 +1,16 @@
 import type {
     TaskView, TaskStage, TaskTag,
     TicketView,
-    Priority
+    Priority,
+    AcceptanceView,
+    AcceptanceStatus
 } from '@app/shared';
-import type { tasks, tickets } from '../prisma/generated/client';
+import type { 
+    tasks, tickets, 
+    acceptance_reports, assignees, task_proposals, dispose_proposals, damage_reports, 
+} from '../prisma/generated/client';
 
+type
 export function toTaskView(task: tasks): TaskView {
     return {
         id: task.id,
@@ -36,3 +42,22 @@ export function toTicketView(ticket: tickets): TicketView {
         updatedAt: ticket.updated_at?.toISOString(),
     };
 }
+
+export function toAcceptanceView(acceptance: acceptance_reports): AcceptanceView {
+    return {
+        id: acceptance.id,
+        creatorId: acceptance.creator_id,
+        taskId: acceptance.task_id,
+        content: acceptance.content || "",
+        managerReview: acceptance.manager_review || "",
+        status: acceptance.status as AcceptanceStatus,
+        approvedAt: acceptance.approved_at?.toISOString(),
+        createdAt: acceptance.created_at?.toISOString(),
+        updatedAt: acceptance.updated_at?.toISOString(),
+    };
+}
+
+
+
+
+

@@ -146,8 +146,7 @@ export class TasksService {
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-        if (!changedFields.length) 
-            return task;
+        if (!changedFields.length) return task;
         
         const updated = await this.updateTask(id, patch);
         const view = toTaskView(updated);

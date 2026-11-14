@@ -22,3 +22,9 @@ export interface TicketEventPayload {
     changedFields?: string[];
 }
 
+export interface AcceptanceEventPayload {
+    acceptanceId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}

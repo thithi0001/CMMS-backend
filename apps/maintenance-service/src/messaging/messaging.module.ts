@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule } from '@nestjs/microservices';
 import { BUS_CLIENT, busClientOptions } from '@app/shared';
 import { TaskEventsPublisher } from './publishers/task-events.publisher';
+import { AcceptanceEventsPublisher } from './publishers/acceptance-events.publisher';
 
 @Global()
 @Module({
@@ -14,6 +15,6 @@ import { TaskEventsPublisher } from './publishers/task-events.publisher';
                 busClientOptions(config.getOrThrow<string>('RABBITMQ_URL')),
         }])
     ],
-    providers: [TaskEventsPublisher],
-    exports: [TaskEventsPublisher],
+    providers: [TaskEventsPublisher, AcceptanceEventsPublisher],
+    exports: [TaskEventsPublisher, AcceptanceEventsPublisher],
 }) export class MessagingModule {}
