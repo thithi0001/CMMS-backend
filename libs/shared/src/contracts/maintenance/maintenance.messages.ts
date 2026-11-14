@@ -4,17 +4,23 @@ import {
     CreateAcceptanceDto,
     CreateAssigneeDto,
     CreateDamageReportDto,
+    CreateDisposeProposalDto,
     CreateTaskDto, 
+    CreateTaskProposalDto, 
     CreateTicketDto, 
     FindAcceptanceQueryDto, 
     FindAssigneeQueryDto, 
     FindDamageReportQueryDto, 
+    FindDisposeProposalQueryDto, 
+    FindTaskProposalQueryDto, 
     FindTaskQueryDto, 
     FindTicketQueryDto, 
     UpdateAcceptanceDto, 
     UpdateAssigneeDto, 
     UpdateDamageReportDto, 
+    UpdateDisposeProposalDto, 
     UpdateTaskDto,
+    UpdateTaskProposalDto,
     UpdateTicketDto
 } from "./maintenance.dto";
 import { TaskStage } from "@app/shared";
@@ -36,7 +42,10 @@ export interface DeleteTicketMsg extends TicketActionMsg {}
 export interface FindTicketMsg { q: FindTicketQueryDto, actor: JwtPayload }
 
 // === TASK PROPOSALS ===
-
+export interface CreateTaskProposalMsg { dto: CreateTaskProposalDto, actor: JwtPayload }
+export interface UpdateTaskProposalMsg { id: number, data: UpdateTaskProposalDto, actor: JwtPayload }
+export interface DeleteTaskProposalMsg { id: number, actor: JwtPayload }
+export interface FindTaskProposalMsg { q: FindTaskProposalQueryDto, actor: JwtPayload }
 
 // === DAMAGE REPORTS ===
 export interface CreateDamageReportMsg { dto: CreateDamageReportDto, actor: JwtPayload }
@@ -45,7 +54,10 @@ export interface DeleteDamageReportMsg { id: number, actor: JwtPayload }
 export interface FindDamageReportMsg { q: FindDamageReportQueryDto, actor: JwtPayload }
 
 // === DISPOSE PROPOSALS ===
-
+export interface CreateDisposeProposalMsg { dto: CreateDisposeProposalDto, actor: JwtPayload }
+export interface UpdateDisposeProposalMsg { id: number, data: UpdateDisposeProposalDto, actor: JwtPayload }
+export interface DeleteDisposeProposalMsg { id: number, actor: JwtPayload }
+export interface FindDisposeProposalMsg { q: FindDisposeProposalQueryDto, actor: JwtPayload }
 
 // === ACCEPTANCES ===
 export interface CreateAcceptanceMsg { dto: CreateAcceptanceDto, actor: JwtPayload }

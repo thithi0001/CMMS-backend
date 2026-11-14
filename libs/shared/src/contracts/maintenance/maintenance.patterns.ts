@@ -78,4 +78,32 @@ export const DAMAGE_REPORT_EVT = {
     DELETED: 'evt.damage_report.deleted',
 } as const;
 
+export const DISPOSE_PROPOSAL_CMD = {
+    CREATE: 'cmd.dispose_proposal.create',
+    UPDATE: 'cmd.dispose_proposal.update',
+    DELETE: 'cmd.dispose_proposal.delete',
+    FIND_ALL: 'cmd.dispose_proposal.find_all',
+    FIND_BY_ID: 'cmd.dispose_proposal.find_by_id',
+} as const;
+
+export const DISPOSE_PROPOSAL_EVT = {
+    CREATED: 'evt.dispose_proposal.created',
+    UPDATED: 'evt.dispose_proposal.updated',
+    DELETED: 'evt.dispose_proposal.deleted',
+} as const;
+
+export const TASK_PROPOSAL_CMD = {
+    CREATE: 'cmd.task.create',
+    UPDATE: 'cmd.task.update',
+    DELETE: 'cmd.task.delete',
+    FIND_ALL: 'cmd.task.find_all',
+    FIND_BY_ID: 'cmd.task.find_by_id',
+} as const;
+
+export const TASK_PROPOSAL_EVT = {
+    CREATED: 'evt.task.created',
+    UPDATED: 'evt.task.updated',
+    DELETED: 'evt.task.deleted',
+} as const;
+
 

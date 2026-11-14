@@ -7,7 +7,9 @@ import type {
     AssigneeView,
     AssigneeStatus,
     DamageReportView,
-    ProposalStatus
+    ProposalStatus,
+    DisposeProposalView,
+    TaskProposalView
 } from '@app/shared';
 import type { 
     tasks, tickets, 
@@ -88,4 +90,33 @@ export function toDamageReportView(d: damage_reports): DamageReportView {
         updatedAt: d.updated_at?.toISOString(),
     };
 }
+
+export function toDisposeProposalView(d: dispose_proposals): DisposeProposalView {
+    return {
+        id: d.id,
+        creatorId: d.creator_id,
+        taskId: d.task_id,
+        deviceId: d.device_id,
+        content: d.content,
+        status: d.status as ProposalStatus,
+        approvedAt: d.approved_at?.toISOString(),
+        createdAt: d.created_at?.toISOString(),
+        updatedAt: d.updated_at?.toISOString(),
+    };
+}
+
+export function toTaskProposalView(d: task_proposals): TaskProposalView {
+    return {
+        id: d.id,
+        creatorId: d.creator_id,
+        taskId: d.task_id,
+        content: d.content,
+        managerReview: d.manager_review,
+        status: d.status as ProposalStatus,
+        approvedAt: d.approved_at?.toISOString(),
+        createdAt: d.created_at?.toISOString(),
+        updatedAt: d.updated_at?.toISOString(),
+    };
+}
+
 

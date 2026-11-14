@@ -43,3 +43,17 @@ export interface DamageReportEventPayload {
     changedFields?: string[];
 }
 
+export interface DisposeProposalEventPayload {
+    proposalId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface TaskProposalEventPayload {
+    proposalId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
