@@ -58,7 +58,7 @@ model dispose_proposals {
   id          Int             @id @default(autoincrement())
   creator_id  Int
   task_id     Int
-  device_id   Int?
+  device_id   Int
   content     String?
   status      proposal_status @default(pending)
   approved_at DateTime?       @db.Timestamptz(6)
