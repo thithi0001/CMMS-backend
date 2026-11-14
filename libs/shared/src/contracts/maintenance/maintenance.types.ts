@@ -2,7 +2,7 @@ import { Priority, TaskStage, TaskTag, AcceptanceStatus, AssigneeStatus, Proposa
 
 export interface TaskView {
     id: number;
-    creatorId: number; // <- user-service
+    creatorId: number;
     deviceId?: number;
     tag: TaskTag;
     stage: TaskStage;
@@ -14,18 +14,6 @@ export interface TaskView {
     actualEndAt?: string;
     createdAt?: string;
     updatedAt?: string;
-}
-
-export interface TaskDetailView {
-    // phiếu báo lỗi
-    // thông tin thiết bị <- device-service
-    // danh sách phân công <- user-service
-    // đề nghị điều chỉnh kế hoạch
-    // phiếu xác nhận hư hỏng
-    // phiếu bàn giao trước và sau kế hoạch <- device-service -> sửa db
-    // danh sách vật tư = yêu cầu, đã lấy + đã dùng <- inventory-service
-    // đề nghị thanh lý
-    // biên bản nghiệm thu
 }
 
 export interface TicketView {
