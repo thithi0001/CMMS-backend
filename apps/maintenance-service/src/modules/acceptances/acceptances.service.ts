@@ -47,7 +47,7 @@ export class AcceptancesService {
             ...(userId && { creator_id: userId }),
             ...(q.taskId && { task_id: q.taskId }),
             ...(Object.keys(dateFilter).length > 0 ? { created_at: dateFilter } : {}),
-        }
+        };
 
         const [total, items] = await this.prisma.$transaction([
             this.prisma.acceptance_reports.count({ where }),
@@ -56,7 +56,7 @@ export class AcceptancesService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { created_at: 'desc' },
-            })
+            }),
         ]);
 
         return {
@@ -69,7 +69,7 @@ export class AcceptancesService {
         const task = await this.tasks.findById(dto.taskId);
         if (task.stage !== TaskStage.IN_PROGRESS && task.stage !== TaskStage.DONE)
             throw new ForbiddenException('Forbid to create acceptance report');
-        if (!(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
+        if (actor.roleCode !== Role.TECHNICIAN || !(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         const acceptance = await this.prisma.acceptance_reports.create({
@@ -94,9 +94,15 @@ export class AcceptancesService {
         let patch = {};
         const task = await this.tasks.findById(acceptance.taskId);
         if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
+            if (data.status === AcceptanceStatus.PENDING)
+                throw new ConflictException('Cannot pending an acceptance report');
 
-        } else if (actor.employeeId === acceptance.creatorId) {
-
+            patch = {
+                manager_review: data.managerReview,
+                status: data.status,
+            };
+        } else if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === acceptance.creatorId) {
+            patch = { content: data.content };
         } else throw new UnauthorizedException('Unauthorized to perform this action');
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)

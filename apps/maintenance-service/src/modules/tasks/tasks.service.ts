@@ -120,7 +120,7 @@ export class TasksService {
 
     async update({ id, data, actor }: UpdateTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.employeeId !== task.creatorId)
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Forbid to update this task');
@@ -158,7 +158,7 @@ export class TasksService {
         const task = await this.findById(id);
         if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Forbid to delete this task');
-        if (actor.employeeId !== task.creatorId)
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.$transaction([
@@ -210,7 +210,7 @@ export class TasksService {
     async start({ id, actor }: TaskActionMsg): Promise<TaskView> {
         const task = await this.findById(id);
         const isConfirmedAssignee = await this.isConfirmedAssignee(task.id, actor.employeeId);
-        if (!isConfirmedAssignee)
+        if (actor.roleCode !== Role.TECHNICIAN || !isConfirmedAssignee)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         if (task.stage !== TaskStage.TODO)
@@ -230,9 +230,8 @@ export class TasksService {
     async end({ id, actor }: TaskActionMsg): Promise<TaskView> {
         const task = await this.findById(id);
         const isConfirmedAssignee = await this.isConfirmedAssignee(task.id, actor.employeeId);
-        if (!isConfirmedAssignee)
+        if (actor.roleCode !== Role.TECHNICIAN || !isConfirmedAssignee)
             throw new UnauthorizedException('Unauthorized to perform this action');
-
         if (task.stage !== TaskStage.IN_PROGRESS)
             throw new ForbiddenException('Can only end an IN PROGRESS task');
 
@@ -249,7 +248,7 @@ export class TasksService {
 
     async cancel({ id, actor }: CancelTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.employeeId !== task.creatorId)
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.TODO)
             throw new ForbiddenException('Can only cancel a TODO task');
@@ -266,7 +265,7 @@ export class TasksService {
 
     async reopen({ id, actor }: CancelTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.employeeId !== task.creatorId)
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Can only reopen a CANCELLED task');
@@ -284,7 +283,7 @@ export class TasksService {
     async evaluate({ id, data, actor}: ChangeTaskStageMsg): Promise<TaskView> {
         // đánh giá PASS hoặc FAIL
         const task = await this.findById(id);
-        if (actor.employeeId !== task.creatorId)
+        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.DONE)
             throw new ForbiddenException('Can only evaluate a DONE task');
