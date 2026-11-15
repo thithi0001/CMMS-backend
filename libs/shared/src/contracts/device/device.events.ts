@@ -47,6 +47,7 @@ export interface HandoverDevicePayload {
     handoverDeviceId: number;
     deviceCode: string;
     creatorId: number;
+    taskId?: number;
     changedFields?: string[];
 }
 

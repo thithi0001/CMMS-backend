@@ -29,6 +29,7 @@ export class HandoverDevicesService {
                 deliver_id: dto.deliverId,
                 receiver_id: dto.receiverId,
                 type: dto.type,
+                task_id: dto.taskId,
             },
             include: { devices: { select: { code: true } } },
         });
@@ -64,6 +65,7 @@ export class HandoverDevicesService {
                     { receiver_id: q.userId },
                 ],
             }),
+            ...(q.taskId && { task_id: q.taskId }),
             ...(q.type && { type: q.type }),
             ...(Object.keys(dateFilter).length > 0 ? { created_at: dateFilter } : {}),
         };

@@ -189,6 +189,7 @@ export class CreateHandoverDeviceDto {
     @IsInt() @Min(1) deliverId!: number;
     @IsInt() @Min(1) receiverId!: number;
     @IsIn(Object.values(HandoverType)) type!: HandoverType;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
 }
 
 export class UpdateHandoverDeviceDto {
@@ -198,6 +199,7 @@ export class UpdateHandoverDeviceDto {
 export class FindHandoverDeviceQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isHandoverd?: boolean;
     @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsIn(Object.values(HandoverType)) type?: HandoverType;
 }
 

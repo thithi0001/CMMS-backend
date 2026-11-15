@@ -33,6 +33,7 @@ export class HandoverDevicesEventsPublisher implements OnApplicationBootstrap {
             handoverDeviceId: handover.id,
             deviceCode: handover.device.code,
             creatorId: handover.creatorId,
+            taskId: handover.taskId
         }, actorId);
     }
 
@@ -41,6 +42,7 @@ export class HandoverDevicesEventsPublisher implements OnApplicationBootstrap {
             handoverDeviceId: handover.id,
             deviceCode: handover.device.code,
             creatorId: handover.creatorId,
+            taskId: handover.taskId,
             changedFields,
         }, actorId);
     }
@@ -50,6 +52,7 @@ export class HandoverDevicesEventsPublisher implements OnApplicationBootstrap {
             handoverDeviceId: handover.id,
             deviceCode: handover.device.code,
             creatorId: handover.creatorId,
+            taskId: handover.taskId,
         }, actorId);
     }
 }

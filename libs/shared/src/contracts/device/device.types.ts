@@ -92,6 +92,7 @@ export interface HandoverDeviceView {
     creatorId: number;
     deliverId: number;
     receiverId: number;
+    taskId?: number;
     type: HandoverType;
     isHandoverd: boolean;
     handoveredAt?: string;

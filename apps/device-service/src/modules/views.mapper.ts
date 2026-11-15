@@ -141,6 +141,7 @@ export function toHandoverDeviceView(h: HandoverWithDevice): HandoverDeviceView 
         creatorId: h.creator_id,
         deliverId: h.deliver_id,
         receiverId: h.receiver_id,
+        taskId: h.task_id || undefined,
         type: h.type as HandoverType,
         isHandoverd: h.is_handovered,
         handoveredAt: h.handovered_at?.toISOString(),
