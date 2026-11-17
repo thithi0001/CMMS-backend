@@ -5,7 +5,6 @@ import type {
     CreateAssigneeMsg,
     DeleteAssigneeMsg,
     FindAssigneeMsg,
-    UpdateAssigneeMsg,
 } from "@app/shared";
 import { AssigneesService } from "./assignees.service";
 
@@ -16,11 +15,6 @@ export class AssigneesController {
     @MessagePattern(ASSIGNEE_CMD.CREATE)
     create(@Payload() msg: CreateAssigneeMsg) {
         return this.assignees.create(msg);
-    }
-
-    @MessagePattern(ASSIGNEE_CMD.UPDATE)
-    update(@Payload() msg: UpdateAssigneeMsg) {
-        return this.assignees.update(msg);
     }
 
     @MessagePattern(ASSIGNEE_CMD.DELETE)

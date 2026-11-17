@@ -35,15 +35,6 @@ export class AssigneeEventsPublisher implements OnApplicationBootstrap {
             taskId: a.taskId
         }, actorId);
     }
-
-    updated(a: AssigneeView, changedFields: string[], actorId: number) {
-        this.publish<AssigneeEventPayload>(ASSIGNEE_EVT.UPDATED, {
-            id: a.id,
-            assigneeId: a.assigneeId,
-            taskId: a.taskId,
-            changedFields
-        }, actorId);
-    }
     
     deleted(a: AssigneeView, actorId: number) {
         this.publish<AssigneeEventPayload>(ASSIGNEE_EVT.DELETED, {

@@ -6,10 +6,8 @@ import {
     AssigneeView,
     FindAssigneeMsg,
     DeleteAssigneeMsg,
-    AssigneeStatus,
-    UpdateAssigneeMsg,
-    myParseDate,
-    CreateAssigneeMsg, 
+    CreateAssigneeMsg,
+    TaskStage,
 } from '@app/shared';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -36,14 +34,13 @@ export class AssigneesService {
     }
 
     async findAll({ q, actor }: FindAssigneeMsg): Promise<Paginated<AssigneeView>> {
-        const { page = 1, limit = 20, status = AssigneeStatus.PENDING } = q;
+        const { page = 1, limit = 20 } = q;
         const dateFilter = {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
         const userId = actor.roleCode === Role.ADMIN ? q.userId : actor.employeeId;
         const where: Prisma.assigneesWhereInput = {
-            status,
             ...(userId && { assignee_id: userId }),
             ...(q.taskId && { task_id: q.taskId }),
             ...(Object.keys(dateFilter).length > 0 ? { created_at: dateFilter } : {}),
@@ -67,14 +64,13 @@ export class AssigneesService {
 
     async create({ dto, actor }: CreateAssigneeMsg): Promise<AssigneeView> {
         const task = await this.tasks.findById(dto.taskId);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         const assignee = await this.prisma.assignees.create({
             data: {
                 task_id: task.id,
                 assignee_id: dto.assigneeId,
-                confirmation_deadline: myParseDate(dto.deadline, 'deadline'),
             },
         });
         const view = toAssigneeView(assignee);
@@ -82,45 +78,12 @@ export class AssigneesService {
         return view
     }
 
-    // cho m chỉnh deadline
-    // cho t xác nhận
-    updateAssignee(id: number, data: Prisma.assigneesUpdateInput) {
-        return this.prisma.assignees.update({ where: { id }, data });
-    }
-    
-    async update({ id, data, actor }: UpdateAssigneeMsg): Promise<AssigneeView> {
-        const assignee = await this.findById(id);
-        if (assignee.status !== AssigneeStatus.PENDING)
-            throw new ForbiddenException('Forbid to update this assignee');
-        const task = await this.tasks.findById(assignee.taskId);
-
-        let patch: Prisma.assigneesUpdateInput = {};
-        if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === assignee.assigneeId) {
-            if (data.status === AssigneeStatus.PENDING)
-                throw new ConflictException('Cannot pending an assignee form');
-            // TECHNICIAN xác nhận có làm hay không
-            patch = { status: data.status };
-        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
-            // MANAGER đổi deadline
-            patch = { confirmation_deadline: myParseDate(data.deadline, 'deadline') };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
-        const changedFields = Object.entries(patch)
-            .filter(([,v]) => v !== undefined)
-            .map(([k]) => k);
-        if (!changedFields.length) return assignee;
-
-        const updated = await this.updateAssignee(id, patch);
-        const view = toAssigneeView(updated);
-        this.events.updated(view, changedFields, actor.sub);
-        return view;
-    }
-
     async delete({ id, actor }: DeleteAssigneeMsg): Promise<AssigneeView> {
         const assignee = await this.findById(id);
-        if (assignee.status !== AssigneeStatus.PENDING)
-            throw new ForbiddenException('Forbid to delete this assignee');
         const task = await this.tasks.findById(assignee.taskId);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
+            throw new ForbiddenException('Forbid to delete this assignee');
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.assignees.delete({ where: { id }});
