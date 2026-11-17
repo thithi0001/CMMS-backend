@@ -7,7 +7,7 @@ import {
     ChangeTaskStageMsg, CancelTaskMsg, TaskActionMsg,
     FindTaskMsg,
     myParseDate,
-    TaskStage, AssigneeStatus,
+    TaskStage,
 } from '@app/shared';
 import { TaskEventsPublisher } from '../../messaging/publishers/task-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
@@ -29,9 +29,6 @@ export class TasksService {
     }
 
     async create({ dto, actor }: CreateTaskMsg): Promise<TaskView> {
-        if (actor.roleCode !== Role.MANAGER)
-            throw new UnauthorizedException('Unauthorized to perform this action');
-        
         const start = myParseDate(dto.scheduledStartAt, 'scheduledStartAt');
         const end = myParseDate(dto.scheduledEndAt, 'scheduledEndAt');
         if (start && end && start.getTime() >= end.getTime())
@@ -100,34 +97,13 @@ export class TasksService {
         }
     }
 
-    async isConfirmedAssignee(taskId: number, employeeId: number): Promise<boolean> {
-        const assignees = await this.prisma.assignees.findMany({
-            where: { task_id: taskId },
-            select: {
-                assignee_id: true,
-                status: true,
-            },
-        });
-        const isConfirmedAssignee = assignees.some(
-            assignee =>
-                assignee.assignee_id === employeeId &&
-                assignee.status === AssigneeStatus.CONFIRMED,
-        );
-
-        return isConfirmedAssignee;
-    }
-
     async isAssignedToTask(taskId: number, employeeId: number): Promise<boolean> {
         const assignees = await this.prisma.assignees.findMany({
             where: { task_id: taskId },
-            select: {
-                assignee_id: true,
-                status: true,
-            },
+            select: { assignee_id: true },
         });
         const isAssignedToTask = assignees.some(
-            assignee =>
-                assignee.assignee_id === employeeId
+            assignee => assignee.assignee_id === employeeId
         );
 
         return isAssignedToTask;
@@ -142,10 +118,10 @@ export class TasksService {
 
     async update({ id, data, actor }: UpdateTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
-            throw new UnauthorizedException('Unauthorized to perform this action');
-        if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
-            throw new ForbiddenException('Forbid to update this task');
+        
+        if (actor.roleCode !== Role.ADMIN)
+            if (actor.employeeId !== task.creatorId)
+                throw new UnauthorizedException('Unauthorized to perform this action');
 
         const start = myParseDate(
             data.scheduledStartAt === undefined ? task.scheduledStartAt : data.scheduledStartAt,
@@ -180,7 +156,7 @@ export class TasksService {
         const task = await this.findById(id);
         if (task.stage !== TaskStage.TODO && task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Forbid to delete this task');
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.$transaction([
@@ -234,8 +210,8 @@ export class TasksService {
 
     async start({ id, actor }: TaskActionMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        const isConfirmedAssignee = await this.isConfirmedAssignee(task.id, actor.employeeId);
-        if (actor.roleCode !== Role.TECHNICIAN || !isConfirmedAssignee)
+        const isAssignedToTask = await this.isAssignedToTask(task.id, actor.employeeId);
+        if (!isAssignedToTask)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         if (task.stage !== TaskStage.TODO)
@@ -254,8 +230,8 @@ export class TasksService {
 
     async end({ id, actor }: TaskActionMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        const isConfirmedAssignee = await this.isConfirmedAssignee(task.id, actor.employeeId);
-        if (actor.roleCode !== Role.TECHNICIAN || !isConfirmedAssignee)
+        const isAssignedToTask = await this.isAssignedToTask(task.id, actor.employeeId);
+        if (!isAssignedToTask)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.IN_PROGRESS)
             throw new ForbiddenException('Can only end an IN PROGRESS task');
@@ -273,7 +249,7 @@ export class TasksService {
 
     async cancel({ id, actor }: CancelTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.TODO)
             throw new ForbiddenException('Can only cancel a TODO task');
@@ -290,7 +266,7 @@ export class TasksService {
 
     async reopen({ id, actor }: CancelTaskMsg): Promise<TaskView> {
         const task = await this.findById(id);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.CANCELLED)
             throw new ForbiddenException('Can only reopen a CANCELLED task');
@@ -308,7 +284,7 @@ export class TasksService {
     async evaluate({ id, data, actor}: ChangeTaskStageMsg): Promise<TaskView> {
         // đánh giá PASS hoặc FAIL
         const task = await this.findById(id);
-        if (actor.roleCode !== Role.MANAGER || actor.employeeId !== task.creatorId)
+        if (actor.employeeId !== task.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.DONE)
             throw new ForbiddenException('Can only evaluate a DONE task');
