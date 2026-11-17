@@ -44,6 +44,14 @@ export class TaskProposalEventsPublisher implements OnApplicationBootstrap {
             changedFields
         }, actorId);
     }
+
+    confirmed(t: TaskProposalView, actorId: number) {
+        this.publish<TaskProposalEventPayload>(TASK_PROPOSAL_EVT.UPDATED, {
+            proposalId: t.id,
+            creatorId: t.creatorId,
+            taskId: t.taskId
+        }, actorId);
+    }
     
     deleted(t: TaskProposalView, actorId: number) {
         this.publish<TaskProposalEventPayload>(TASK_PROPOSAL_EVT.DELETED, {

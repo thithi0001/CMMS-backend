@@ -23,6 +23,11 @@ export class TaskProposalsController {
         return this.taskProposals.update(msg);
     }
 
+    @MessagePattern(TASK_PROPOSAL_CMD.CONFIRM)
+    confirm(@Payload() msg: UpdateTaskProposalMsg) {
+        return this.taskProposals.confirm(msg);
+    }
+
     @MessagePattern(TASK_PROPOSAL_CMD.DELETE)
     delete(@Payload() msg: DeleteTaskProposalMsg) {
         return this.taskProposals.delete(msg);

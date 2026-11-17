@@ -30,9 +30,9 @@ export class TaskProposalsService {
     }
 
     async findById(id: number): Promise<TaskProposalView> {
-        const d = await this.findTaskProposalById(id);
-        if (!d) throw new NotFoundException('Task proposal not found');
-        return toTaskProposalView(d);
+        const proposal = await this.findTaskProposalById(id);
+        if (!proposal) throw new NotFoundException('Task proposal not found');
+        return toTaskProposalView(proposal);
     }
 
     async findAll({ q, actor }: FindTaskProposalMsg): Promise<Paginated<TaskProposalView>> {
@@ -66,22 +66,23 @@ export class TaskProposalsService {
     }
 
     async create({ dto, actor }: CreateTaskProposalMsg): Promise<TaskProposalView> {
-        if (actor.roleCode !== Role.TECHNICIAN)
-            throw new UnauthorizedException('Unauthorized to perform this action');
+        // if (actor.roleCode !== Role.TECHNICIAN)
+        //     throw new UnauthorizedException('Unauthorized to perform this action');
         const task = await this.tasks.findById(dto.taskId);
         if (!(await this.tasks.isAssignedToTask(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
+        // kiểm tra thêm xem có phải là nhân viên liên quan đến thiết bị
         if (task.stage !== TaskStage.TODO)
             throw new ForbiddenException('Forbid to create task proposal');
 
-        const d = await this.prisma.task_proposals.create({
+        const proposal = await this.prisma.task_proposals.create({
             data: {
                 creator_id: actor.employeeId,
                 task_id: task.id,
                 content: dto.content,
             },
         });
-        const view = toTaskProposalView(d);
+        const view = toTaskProposalView(proposal);
         this.events.created(view, actor.sub);
         return view;
     }
@@ -95,44 +96,65 @@ export class TaskProposalsService {
     }
 
     async update({ id, data, actor }: UpdateTaskProposalMsg): Promise<TaskProposalView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
-            throw new ForbiddenException('Forbid to delete this task proposal');
+        const proposal = await this.findById(id);
+        if (proposal.status !== ProposalStatus.PENDING)
+            throw new ForbiddenException('Forbid to perform this action');
         if (data.status === ProposalStatus.PENDING)
             throw new ConflictException('Cannot pending a task proposal');
-        const task = await this.tasks.findById(d.taskId);
-
-        let patch: Prisma.task_proposalsUpdateInput = {};
-        if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === d.creatorId) {
-            patch = { content: data.content };
-        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
-            patch = {
-                manager_review: data.managerReview,
-                status: data.status,
-                approved_at: new Date(),
-            };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
+        if (actor.employeeId !== proposal.creatorId) 
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        
+        const patch: Prisma.task_proposalsUpdateInput = { content: data.content };
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-        if (!changedFields.length) return d;
+        if (!changedFields.length) return proposal;
 
         const updated = await this.updateTaskProposal(id, patch);
         const view = toTaskProposalView(updated);
         this.events.updated(view, changedFields, actor.sub);
         return view;
     }
+
+    async confirm({ id, data, actor }: UpdateTaskProposalMsg): Promise<TaskProposalView> {
+        const proposal = await this.findById(id);
+        if (actor.employeeId === proposal.creatorId)        
+            throw new ForbiddenException('Cannot confirm your own proposal');
+        if (proposal.status !== ProposalStatus.PENDING)
+            throw new ForbiddenException('Forbid to perform this action');
+        if (data.status === ProposalStatus.PENDING)
+            throw new ConflictException('Cannot pending a task proposal');
+        
+        const task = await this.tasks.findById(proposal.taskId);
+        if (actor.employeeId !== task.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        
+        const patch: Prisma.task_proposalsUpdateInput = { 
+            manager_review: data.managerReview,
+            status: data.status,
+        };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+        if (!changedFields.length) return proposal;
+
+        const updated = await this.updateTaskProposal(id, patch);
+        const view = toTaskProposalView(updated);
+        this.events.confirmed(view, actor.sub);
+        return view;
+    }
     
     // xóa trước khi được xác nhận
     async delete({ id, actor }: DeleteTaskProposalMsg): Promise<TaskProposalView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
+        const proposal = await this.findById(id);
+        if (proposal.status !== ProposalStatus.PENDING)
             throw new ForbiddenException('Forbid to delete this task proposal');
-        if (actor.roleCode !== Role.TECHNICIAN || actor.employeeId !== d.creatorId)
+        // kiểm tra thêm xem có phải là nhân viên liên quan đến thiết bị
+        if (actor.employeeId !== proposal.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.task_proposals.delete({ where: { id }});
-        this.events.deleted(d, actor.sub);
-        return d;
+        this.events.deleted(proposal, actor.sub);
+        return proposal;
     }
 }
