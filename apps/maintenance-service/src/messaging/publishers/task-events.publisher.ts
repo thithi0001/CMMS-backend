@@ -5,6 +5,7 @@ import {
     TaskView, 
     TaskEventPayload, TaskStageChangePayload,
     TaskStage,
+    TaskAttachmentPayload,
 } from '@app/shared';
 
 @Injectable()
@@ -64,5 +65,22 @@ export class TaskEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
 
+    ticketAttached(t: TaskView, ticketId: number, actorId: number) {
+        this.publish<TaskAttachmentPayload>(TASK_EVT.TICKET_ATTACHED, {
+            taskId: t.id,
+            creatorId: t.creatorId,
+            attachmentId: ticketId,
+            type: 'ticket'
+        }, actorId);
+    }
+    
+    deviceAttached(t: TaskView, deviceId: number, actorId: number) {
+        this.publish<TaskAttachmentPayload>(TASK_EVT.DEVICE_ATTACHED, {
+            taskId: t.id, 
+            creatorId: t.creatorId,
+            attachmentId: deviceId,
+            type: 'device'
+        }, actorId);
+    }
     
 }
