@@ -23,6 +23,11 @@ export class AcceptancesController {
         return this.acceptances.update(msg);
     }
 
+    @MessagePattern(ACCEPTANCE_CMD.CONFIRM)
+    confirm(@Payload() msg: UpdateAcceptanceMsg) {
+        return this.acceptances.confirm(msg);
+    }
+
     @MessagePattern(ACCEPTANCE_CMD.DELETE)
     delete(@Payload() msg: DeleteAcceptanceMsg) {
         return this.acceptances.delete(msg);

@@ -69,7 +69,7 @@ export class AcceptancesService {
         const task = await this.tasks.findById(dto.taskId);
         if (task.stage !== TaskStage.IN_PROGRESS && task.stage !== TaskStage.DONE)
             throw new ForbiddenException('Forbid to create acceptance report');
-        if (actor.roleCode !== Role.TECHNICIAN || !(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
+        if (!(await this.tasks.isAssignedToTask(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         const acceptance = await this.prisma.acceptance_reports.create({
@@ -89,32 +89,44 @@ export class AcceptancesService {
     async update({ id, data, actor }: UpdateAcceptanceMsg): Promise<AcceptanceView> {
         const acceptance = await this.findById(id);
         if (acceptance.status !== AcceptanceStatus.PENDING)
-            throw new ForbiddenException('Forbid to delete this acceptance report');
+            throw new ForbiddenException('Forbid to update this acceptance report');
+        if (actor.employeeId !== acceptance.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
 
-        let patch = {};
-        const task = await this.tasks.findById(acceptance.taskId);
-        if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
-            if (data.status === AcceptanceStatus.PENDING)
-                throw new ConflictException('Cannot pending an acceptance report');
-
-            patch = {
-                manager_review: data.managerReview,
-                status: data.status,
-            };
-        } else if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === acceptance.creatorId) {
-            patch = { content: data.content };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
+        const patch: Prisma.acceptance_reportsUpdateInput = { content: data.content };
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
         if (!changedFields.length) return acceptance;
 
         const updated = await this.prisma.acceptance_reports.update({
-            where: { id },
-            data: patch,
+            where: { id }, data: patch,
         });
         const view = toAcceptanceView(updated);
         this.events.updated(view, changedFields, actor.sub);
+        return view;
+    }
+
+    // cho m hoặc e nghiệm thu
+    async confirm({ id, data, actor }: UpdateAcceptanceMsg): Promise<AcceptanceView> {
+        const acceptance = await this.findById(id);
+        if (acceptance.status !== AcceptanceStatus.PENDING)
+            throw new ForbiddenException('Forbid to confirm this acceptance report');
+        
+        const patch: Prisma.acceptance_reportsUpdateInput = { 
+            review: data.review,
+            status: data.status,
+        };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+        if (!changedFields.length) return acceptance;
+
+        const updated = await this.prisma.acceptance_reports.update({
+            where: { id }, data: patch,
+        });
+        const view = toAcceptanceView(updated);
+        this.events.confirmed(view, changedFields, actor.sub);
         return view;
     }
 

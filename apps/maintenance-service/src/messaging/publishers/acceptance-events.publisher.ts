@@ -45,6 +45,15 @@ export class AcceptanceEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
     
+    confirmed(a: AcceptanceView, changedFields: string[], actorId: number) {
+        this.publish<AcceptanceEventPayload>(ACCEPTANCE_EVT.CONFIRMED, {
+            acceptanceId: a.id,
+            creatorId: a.creatorId,
+            taskId: a.taskId,
+            changedFields
+        }, actorId);
+    }
+    
     deleted(a: AcceptanceView, actorId: number) {
         this.publish<AcceptanceEventPayload>(ACCEPTANCE_EVT.DELETED, {
             acceptanceId: a.id,
