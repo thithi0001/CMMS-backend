@@ -10,32 +10,27 @@ datasource db {
 }
 
 model acceptance_reports {
-  id             Int                      @id @default(autoincrement())
-  creator_id     Int
-  task_id        Int
-  content        String?
-  manager_review String?
-  status         acceptance_report_status @default(pending)
-  approved_at    DateTime?                @db.Timestamptz(6)
-  created_at     DateTime?                @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime?                @default(now()) @db.Timestamptz(6)
-  tasks          tasks                    @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id          Int                      @id @default(autoincrement())
+  creator_id  Int
+  task_id     Int
+  content     String?
+  review      String?
+  status      acceptance_report_status @default(pending)
+  approved_at DateTime?                @db.Timestamptz(6)
+  created_at  DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?                @default(now()) @db.Timestamptz(6)
+  tasks       tasks                    @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([task_id], map: "idx_acceptance_reports_task_id")
 }
 
 model assignees {
-  id                    Int             @id @default(autoincrement())
-  assignee_id           Int
-  task_id               Int
-  status                assignee_status @default(pending)
-  confirmation_deadline DateTime?       @db.Timestamptz(6)
-  confirmed_at          DateTime?       @db.Timestamptz(6)
-  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime?       @default(now()) @db.Timestamptz(6)
-  tasks                 tasks           @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([assignee_id, status], map: "idx_assignees_assignee_status")
+  id          Int       @id @default(autoincrement())
+  assignee_id Int
+  task_id     Int
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  tasks       tasks     @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model damage_reports {

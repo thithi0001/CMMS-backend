@@ -23,14 +23,6 @@ export const Priority = {
 } as const;
 export type Priority = (typeof Priority)[keyof typeof Priority];
 
-export const AssigneeStatus = {
-    PENDING: 'pending',
-    CONFIRMED: 'confirmed',
-    EXPIRED: 'expired',
-    CANCELLED: 'cancelled',
-} as const;
-export type AssigneeStatus = (typeof AssigneeStatus)[keyof typeof AssigneeStatus];
-
 export const AcceptanceStatus = {
     PENDING: 'pending',
     PASS: 'pass',

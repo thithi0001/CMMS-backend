@@ -14,6 +14,13 @@ export interface TaskStageChangePayload {
     newStage: TaskStage;
 }
 
+export interface TaskAttachmentPayload {
+    taskId: number;
+    creatorId: number;
+    attachmentId: number;
+    type: 'ticket' | 'device';
+}
+
 export interface TicketEventPayload {
     ticketId: number;
     creatorId: number;

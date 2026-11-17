@@ -16,7 +16,6 @@ import {
     FindTaskQueryDto, 
     FindTicketQueryDto, 
     UpdateAcceptanceDto, 
-    UpdateAssigneeDto, 
     UpdateDamageReportDto, 
     UpdateDisposeProposalDto, 
     UpdateTaskDto,
@@ -33,6 +32,7 @@ export interface DeleteTaskMsg extends TaskActionMsg {}
 export interface CancelTaskMsg extends DeleteTaskMsg {}
 export interface ChangeTaskStageMsg { id: number, data: ChangeTaskStageDto, actor: JwtPayload }
 export interface FindTaskMsg { q: FindTaskQueryDto, actor: JwtPayload }
+export interface AttachToTaskMsg { id: number, attachmentId: number, actor: JwtPayload };
 
 // === TICKETS ===
 export interface CreateTicketMsg { dto: CreateTicketDto, actor: JwtPayload }
@@ -67,7 +67,6 @@ export interface FindAcceptanceMsg { q: FindAcceptanceQueryDto, actor: JwtPayloa
 
 // === ASSIGNEES ===
 export interface CreateAssigneeMsg { dto: CreateAssigneeDto, actor: JwtPayload }
-export interface UpdateAssigneeMsg { id: number, data: UpdateAssigneeDto, actor: JwtPayload }
 export interface DeleteAssigneeMsg { id: number, actor: JwtPayload }
 export interface FindAssigneeMsg { q: FindAssigneeQueryDto, actor: JwtPayload }
 

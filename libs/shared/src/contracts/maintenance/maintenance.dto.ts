@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
-import { TaskStage, TaskTag, Priority, AcceptanceStatus, AssigneeStatus, ProposalStatus } from './maintenance.enums';
+import { TaskStage, TaskTag, Priority, AcceptanceStatus, ProposalStatus } from './maintenance.enums';
 
 export class CreateTaskDto {
     @IsString() title!: string;
@@ -62,15 +62,9 @@ export class CreateAssigneeDto {
     @IsOptional() @IsDateString() deadline?: string;
 }
 
-export class UpdateAssigneeDto {
-    @IsOptional() @IsIn(Object.values(AssigneeStatus)) status?: AssigneeStatus;
-    @IsOptional() @IsDateString() deadline?: string;
-}
-
 export class FindAssigneeQueryDto extends FindQueryDto {
     @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
-    @IsOptional() @IsIn(Object.values(AssigneeStatus)) status?: AssigneeStatus;
 }
 
 export class CreateTaskProposalDto {
@@ -131,7 +125,7 @@ export class CreateAcceptanceDto {
 
 export class UpdateAcceptanceDto {
     @IsOptional() @IsString() content?: string;
-    @IsOptional() @IsString() managerReview?: string;
+    @IsOptional() @IsString() review?: string;
     @IsIn(Object.values(AcceptanceStatus)) status?: AcceptanceStatus;
 }
 
