@@ -107,8 +107,7 @@ export class TicketsService {
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-        if (!changedFields.length) 
-            return ticket;
+        if (!changedFields.length) return ticket;
 
         const updated = await this.updateTicket(id, patch);
         const view = toTicketView(updated);
@@ -117,20 +116,18 @@ export class TicketsService {
     }
 
     async confirm({ id, actor }: TicketActionMsg): Promise<TicketView> {
-        if (actor.roleCode !== Role.MANAGER)
-            throw new UnauthorizedException('Unauthorized to perform this action');
-        
+        // if (actor.roleCode !== Role.MANAGER)
+        //     throw new UnauthorizedException('Unauthorized to perform this action');
         const ticket = await this.findById(id);
+        if (actor.employeeId === ticket.creatorId)        
+            throw new ForbiddenException('Cannot confirm your own ticket');
         if (ticket.isConfirmed)
             throw new ForbiddenException('Ticket is already confirmed');
         
         const patch: Prisma.ticketsUpdateInput = {
             is_confirmed: true,
-            confirmer_id: actor.employeeId
-        }
-        const changedFields = Object.entries(patch)
-            .filter(([,v]) => v !== undefined)
-            .map(([k]) => k);
+            confirmer_id: actor.employeeId,
+        };
         const updated = await this.updateTicket(id, patch);
         const view = toTicketView(updated);
         this.events.confirmed(view, actor.sub);
