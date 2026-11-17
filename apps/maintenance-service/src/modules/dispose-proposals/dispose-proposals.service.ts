@@ -30,9 +30,9 @@ export class DisposeProposalsService {
     }
 
     async findById(id: number): Promise<DisposeProposalView> {
-        const d = await this.findDisposeProposalById(id);
-        if (!d) throw new NotFoundException('Dispose proposal not found');
-        return toDisposeProposalView(d);
+        const proposal = await this.findDisposeProposalById(id);
+        if (!proposal) throw new NotFoundException('Dispose proposal not found');
+        return toDisposeProposalView(proposal);
     }
 
     async findAll({ q, actor }: FindDisposeProposalMsg): Promise<Paginated<DisposeProposalView>> {
@@ -67,17 +67,17 @@ export class DisposeProposalsService {
     }
 
     async create({ dto, actor }: CreateDisposeProposalMsg): Promise<DisposeProposalView> {
-        if (actor.roleCode !== Role.TECHNICIAN)
-            throw new UnauthorizedException('Unauthorized to perform this action');
+        // if (actor.roleCode !== Role.TECHNICIAN)
+        //     throw new UnauthorizedException('Unauthorized to perform this action');
         const task = await this.tasks.findById(dto.taskId);
-        if (!(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
+        if (!(await this.tasks.isAssignedToTask(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
         if (task.stage !== TaskStage.IN_PROGRESS)
             throw new ForbiddenException('Forbid to create dispose proposal');
         if (!task.deviceId)
             throw new ConflictException('Device is required');
 
-        const d = await this.prisma.dispose_proposals.create({
+        const proposal = await this.prisma.dispose_proposals.create({
             data: {
                 creator_id: actor.employeeId,
                 task_id: task.id,
@@ -85,7 +85,7 @@ export class DisposeProposalsService {
                 content: dto.content,
             },
         });
-        const view = toDisposeProposalView(d);
+        const view = toDisposeProposalView(proposal);
         this.events.created(view, actor.sub);
         return view;
     }
@@ -99,43 +99,61 @@ export class DisposeProposalsService {
     }
 
     async update({ id, data, actor }: UpdateDisposeProposalMsg): Promise<DisposeProposalView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
+        const proposal = await this.findById(id);
+        if (proposal.status !== ProposalStatus.PENDING)
             throw new ForbiddenException('Forbid to delete this dispose proposal');
         if (data.status === ProposalStatus.PENDING)
             throw new ConflictException('Cannot pending a dispose proposal');
-        const task = await this.tasks.findById(d.taskId);
-
-        let patch: Prisma.dispose_proposalsUpdateInput = {};
-        if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === d.creatorId) {
-            patch = { content: data.content };
-        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
-            patch = {
-                status: data.status,
-                approved_at: new Date(),
-            };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
+        if (actor.employeeId !== proposal.creatorId) 
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        
+        const patch: Prisma.dispose_proposalsUpdateInput = { content: data.content };
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-        if (!changedFields.length) return d;
+        if (!changedFields.length) return proposal;
 
         const updated = await this.updateDisposeProposal(id, patch);
         const view = toDisposeProposalView(updated);
         this.events.updated(view, changedFields, actor.sub);
         return view;
     }
+
+    async confirm({ id, data, actor }: UpdateDisposeProposalMsg): Promise<DisposeProposalView> {
+        const proposal = await this.findById(id);
+        if (actor.employeeId === proposal.creatorId)        
+            throw new ForbiddenException('Cannot confirm your own proposal');
+        if (proposal.status !== ProposalStatus.PENDING)
+            throw new ForbiddenException('Forbid to delete this dispose proposal');
+        if (data.status === ProposalStatus.PENDING)
+            throw new ConflictException('Cannot pending a dispose proposal');
+        
+        const task = await this.tasks.findById(proposal.taskId);
+        if (actor.employeeId !== task.creatorId) 
+            throw new UnauthorizedException('Unauthorized to perform this action');
+        
+        const patch: Prisma.dispose_proposalsUpdateInput = { status: data.status };
+        const changedFields = Object.entries(patch)
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
+        if (!changedFields.length) return proposal;
+
+        const updated = await this.updateDisposeProposal(id, patch);
+        const view = toDisposeProposalView(updated);
+        this.events.confirmed(view, actor.sub);
+        return view;
+    }
     
     // xóa trước khi được xác nhận
     async delete({ id, actor }: DeleteDisposeProposalMsg): Promise<DisposeProposalView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
+        const proposal = await this.findById(id);
+        if (proposal.status !== ProposalStatus.PENDING)
             throw new ForbiddenException('Forbid to delete this dispose proposal');
-        if (actor.roleCode !== Role.TECHNICIAN || actor.employeeId !== d.creatorId)
+        if (actor.employeeId !== proposal.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.dispose_proposals.delete({ where: { id }});
-        this.events.deleted(d, actor.sub);
-        return d;
+        this.events.deleted(proposal, actor.sub);
+        return proposal;
     }
 }

@@ -45,6 +45,14 @@ export class DisposeProposalEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
     
+    confirmed(d: DisposeProposalView, actorId: number) {
+        this.publish<DisposeProposalEventPayload>(DISPOSE_PROPOSAL_EVT.UPDATED, {
+            proposalId: d.id,
+            creatorId: d.creatorId,
+            taskId: d.taskId
+        }, actorId);
+    }
+    
     deleted(d: DisposeProposalView, actorId: number) {
         this.publish<DisposeProposalEventPayload>(DISPOSE_PROPOSAL_EVT.DELETED, {
             proposalId: d.id,

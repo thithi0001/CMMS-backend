@@ -23,6 +23,11 @@ export class DisposeProposalsController {
         return this.disposeProposals.update(msg);
     }
 
+    @MessagePattern(DISPOSE_PROPOSAL_CMD.CONFIRM)
+    confirm(@Payload() msg: UpdateDisposeProposalMsg) {
+        return this.disposeProposals.confirm(msg);
+    }
+
     @MessagePattern(DISPOSE_PROPOSAL_CMD.DELETE)
     delete(@Payload() msg: DeleteDisposeProposalMsg) {
         return this.disposeProposals.delete(msg);
