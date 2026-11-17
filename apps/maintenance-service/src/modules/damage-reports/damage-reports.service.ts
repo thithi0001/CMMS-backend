@@ -30,9 +30,9 @@ export class DamageReportsService {
     }
 
     async findById(id: number): Promise<DamageReportView> {
-        const d = await this.findDamageReportById(id);
-        if (!d) throw new NotFoundException('Damage report not found');
-        return toDamageReportView(d);   
+        const report = await this.findDamageReportById(id);
+        if (!report) throw new NotFoundException('Damage report not found');
+        return toDamageReportView(report);   
     }
 
     async findAll({ q, actor }: FindDamageReportMsg): Promise<Paginated<DamageReportView>> {
@@ -72,17 +72,13 @@ export class DamageReportsService {
     }
 
     async create({ dto, actor }: CreateDamageReportMsg): Promise<DamageReportView> {
-        if (actor.roleCode !== Role.TECHNICIAN)
-            throw new UnauthorizedException('Unauthorized to perform this action');
         const task = await this.tasks.findById(dto.taskId);
-        if (!(await this.tasks.isConfirmedAssignee(task.id, actor.employeeId)))
+        if (!(await this.tasks.isAssignedToTask(task.id, actor.employeeId)))
             throw new UnauthorizedException('Unauthorized to perform this action');
-        if (task.stage !== TaskStage.IN_PROGRESS)
-            throw new ForbiddenException('Forbid to create damage report');
         if (!task.deviceId)
             throw new ConflictException('Device is required');
 
-        const d = await this.prisma.damage_reports.create({
+        const report = await this.prisma.damage_reports.create({
             data: {
                 creator_id: actor.employeeId,
                 task_id: task.id,
@@ -90,7 +86,7 @@ export class DamageReportsService {
                 content: dto.content,
             },
         });
-        const view = toDamageReportView(d);
+        const view = toDamageReportView(report);
         this.events.created(view, actor.sub);
         return view;
     }
@@ -101,29 +97,24 @@ export class DamageReportsService {
         });
     }
     
-    // cho e hoặc m xác nhận
     async update({ id, data, actor }: UpdateDamageReportMsg): Promise<DamageReportView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
-            throw new ForbiddenException('Forbid to delete this damage report');
-        if (data.status === ProposalStatus.PENDING)
-            throw new ConflictException('Cannot pending a damage report');
+        const report = await this.findById(id);
+        if (actor.employeeId !== report.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
 
-        const task = await this.tasks.findById(d.taskId);
-        let patch: Prisma.damage_reportsUpdateInput = {};
-        if (actor.roleCode === Role.TECHNICIAN && actor.employeeId === d.creatorId) {
-            patch = { content: data.content };
-        } else if (actor.roleCode === Role.MANAGER && actor.employeeId === task.creatorId) {
-            patch = {
+        const isPending = report.status === ProposalStatus.PENDING;
+        const patch: Prisma.damage_reportsUpdateInput = {
+            content: data.content,
+            ...(!isPending && {
                 status: data.status,
-                confirmer_id: actor.employeeId,
-                confirmed_at: new Date(),
-            };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
+                confirmer_id: null,
+                confirmed_at: null,
+            }),
+        };
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-        if (!changedFields.length) return d;
+        if (!changedFields.length) return report;
 
         const updated = await this.updateDamageReport(id, patch);
         const view = toDamageReportView(updated);
@@ -131,15 +122,35 @@ export class DamageReportsService {
         return view;
     }
 
+    // cho e hoặc m xác nhận
+    async confirm({ id, data, actor }: UpdateDamageReportMsg): Promise<DamageReportView> {
+        const report = await this.findById(id);
+        if (actor.employeeId === report.creatorId)        
+            throw new ForbiddenException('Cannot confirm your own report');
+        if (!report.status) return report;
+        if (report.status !== ProposalStatus.PENDING)
+            throw new ForbiddenException('Forbid to confirm this damage report');
+
+        const patch: Prisma.damage_reportsUpdateInput = {
+            status: data.status,
+            confirmer_id: actor.employeeId,
+            confirmed_at: new Date(),
+        };
+        const updated = await this.updateDamageReport(id, patch);
+        const view = toDamageReportView(updated);
+        this.events.confirmed(view, actor.sub);
+        return view;
+    }
+
     async delete({ id, actor }: DeleteDamageReportMsg): Promise<DamageReportView> {
-        const d = await this.findById(id);
-        if (d.status !== ProposalStatus.PENDING)
+        const report = await this.findById(id);
+        if (report.status !== ProposalStatus.PENDING)
             throw new ForbiddenException('Forbid to delete this damage report');
-        if (actor.roleCode !== Role.TECHNICIAN || actor.employeeId !== d.creatorId)
+        if (actor.roleCode !== Role.TECHNICIAN || actor.employeeId !== report.creatorId)
             throw new UnauthorizedException('Unauthorized to perform this action');
 
         await this.prisma.damage_reports.delete({ where: { id }});
-        this.events.deleted(d, actor.sub);
-        return d;
+        this.events.deleted(report, actor.sub);
+        return report;
     }
 }

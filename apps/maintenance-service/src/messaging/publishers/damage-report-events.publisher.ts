@@ -45,6 +45,14 @@ export class DamageReportEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
     
+    confirmed(a: DamageReportView, actorId: number) {
+        this.publish<DamageReportEventPayload>(DAMAGE_REPORT_EVT.CONFIRMED, {
+            reportId: a.id,
+            creatorId: a.creatorId,
+            taskId: a.taskId
+        }, actorId);
+    }
+    
     deleted(a: DamageReportView, actorId: number) {
         this.publish<DamageReportEventPayload>(DAMAGE_REPORT_EVT.DELETED, {
             reportId: a.id,

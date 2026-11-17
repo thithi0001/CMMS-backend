@@ -23,6 +23,11 @@ export class DamageReportsController {
         return this.damageReports.update(msg);
     }
 
+    @MessagePattern(DAMAGE_REPORT_CMD.CONFIRM)
+    confirm(@Payload() msg: UpdateDamageReportMsg) {
+        return this.damageReports.update(msg);
+    }
+
     @MessagePattern(DAMAGE_REPORT_CMD.DELETE)
     delete(@Payload() msg: DeleteDamageReportMsg) {
         return this.damageReports.delete(msg);
