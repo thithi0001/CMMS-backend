@@ -43,6 +43,13 @@ export class AssignDevicesEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
 
+    confirmed(assign: AssignDeviceView, actorId: number) {
+        this.publish<AssignDevicePayload>(ASSIGN_DEVICE_EVT.CONFIRMED, {
+            assignDeviceId: assign.id,
+            creatorId: assign.creatorId,
+        }, actorId);
+    }
+
     deleted(assign: AssignDeviceView, actorId: number) {
         this.publish<AssignDevicePayload>(ASSIGN_DEVICE_EVT.DELETED, {
             assignDeviceId: assign.id,

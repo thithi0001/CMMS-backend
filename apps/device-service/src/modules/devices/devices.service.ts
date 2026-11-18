@@ -15,6 +15,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { toDeviceHistoryView, toDeviceView } from '../views.mapper';
 import { SourcesService } from '../sources/sources.service';
 import { CategoriesService } from '../categories/categories.service';
+import { isAllowedToChangeState } from '../device-state-machine';
 
 @Injectable()
 export class DevicesService {
@@ -83,26 +84,14 @@ export class DevicesService {
     }
 
     async findAll(q: FindDeviceQueryDto): Promise<Paginated<DeviceView>> {
-        const {
-            page = 1,
-            limit = 20,
-            search
-        } = q;
+        const { page = 1, limit = 20, search } = q;
         const priceFilter = {
-            ...(q.above !== undefined
-                ? { gte: new Prisma.Decimal(q.above) } : {}
-            ),
-            ...(q.below !== undefined
-                ? { lte: new Prisma.Decimal(q.below) } : {}
-            ),
+            ...(q.above !== undefined ? { gte: new Prisma.Decimal(q.above) } : {}),
+            ...(q.below !== undefined ? { lte: new Prisma.Decimal(q.below) } : {}),
         };
         const dateFilter = {
-            ...(q.from !== undefined
-                ? { gte: new Date(q.from) } : {}
-            ),
-            ...(q.to !== undefined
-                ? { lte: new Date(q.to) } : {}
-            ),
+            ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
+            ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
 
         const where: Prisma.devicesWhereInput = {
@@ -118,12 +107,8 @@ export class DevicesService {
                     { install_location: { contains: search, mode: 'insensitive' }},
                 ],
             }),
-            ...(Object.keys(priceFilter).length > 0
-                ? { purchase_price: priceFilter } : {}
-            ),
-            ...(Object.keys(dateFilter).length > 0
-                ? { purchase_date: dateFilter } : {}
-            ),
+            ...(Object.keys(priceFilter).length > 0 ? { purchase_price: priceFilter } : {}),
+            ...(Object.keys(dateFilter).length > 0 ? { purchase_date: dateFilter } : {}),
         };
 
         const [total, devices] = await this.prisma.$transaction([
@@ -182,41 +167,42 @@ export class DevicesService {
             specifications: data.specifications,
             img_url: data.imgUrl,
             install_location: data.installLocation,
-            updated_at: new Date(),
         };
-
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
+        if (!changedFields.length) return device;
 
         const updated = await this.prisma.devices.update({
             where: { id: device.id },
             data: patch,
             include: this.include,
         });
-
-        if (changedFields.length)
-            this.events.updated(updated.id, updated.code, changedFields, actor.sub);
-
+        this.events.updated(updated.id, updated.code, changedFields, actor.sub);
         return toDeviceView(updated);
     }
 
     async changeStage({ id, newState, actor }: ChangeDeviceStateMsg): Promise<DeviceView> {
         const device = await this.findById(id);
+        if (!isAllowedToChangeState(device.state, newState))
+            throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
         
-        const now = new Date();
-        await this.prisma.devices.update({
-            where: { id: device.id },
-            data: { 
-                state: newState,
-                updated_at: now,
-            },
-        });
-        this.events.stateChanged(id, device.code, device.state, newState, actor.sub);
-
-        device.state = newState;
-        device.updatedAt = now.toISOString();
-        return device;
+        const [updated, _] = await this.prisma.$transaction([
+            this.prisma.devices.update({
+                where: { id }, data: { state: newState },
+                include: this.include,
+            }),
+            this.prisma.device_activity_histories.create({
+                data: {
+                    device_id: id,
+                    old_state: device.state,
+                    new_state: newState,
+                },
+            }),
+        ]);
+        const view = toDeviceView(updated);
+        this.events.stateChanged(view.id, view.code, device.state, newState, actor.sub);
+        return view;
     }
 
     async getHistory(q: FindDeviceHistoryDto): Promise<Paginated<DeviceHistoryView>> {

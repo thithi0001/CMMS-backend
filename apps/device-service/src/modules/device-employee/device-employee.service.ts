@@ -1,4 +1,5 @@
 import {
+    ConflictException,
     ForbiddenException, Injectable, NotFoundException, UnauthorizedException
 } from '@nestjs/common';
 import {
@@ -10,6 +11,7 @@ import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toDeviceEmployeeView } from '../views.mapper';
 import { DevicesService } from '../devices/devices.service';
+import { isAllowedToChangeState } from '../device-state-machine';
 
 @Injectable()
 export class DeviceEmployeeService {
@@ -20,11 +22,17 @@ export class DeviceEmployeeService {
     ) {}
 
     async create({ dto, actor }: CreateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {
-        if (actor.roleCode !== Role.ADMIN && actor.roleCode !== Role.MANAGER)
-            throw new UnauthorizedException('Unauthorized to perform this action');
         const device = await this.devicesService.findById(dto.deviceId);
-        if (device.state !== DeviceState.AVAILABLE)
-            throw new ForbiddenException('Forbid to create device employee');
+        if (!isAllowedToChangeState(device.state, DeviceState.IN_USE))
+                    throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
+        // 1 thiết bị không thể cùng lúc cấp cho nhiều nhân viên
+        const isReturned = !!(await this.prisma.device_employee.findFirst({
+            where: {
+                device_id: device.id,
+                is_returned: false,
+            },
+        }));
+        if (!isReturned) throw new ConflictException('Cannot assign this device to this employee');
 
         const [_, employeeDevice] = await this.prisma.$transaction([
             this.prisma.devices.update({
@@ -87,7 +95,10 @@ export class DeviceEmployeeService {
             }),
         ]);
 
-        return { items: items.map(toDeviceEmployeeView), total, page, limit };
+        return { 
+            items: items.map(toDeviceEmployeeView), 
+            total, page, limit 
+        };
     }
 
     async update({ id, data, actor }: UpdateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {

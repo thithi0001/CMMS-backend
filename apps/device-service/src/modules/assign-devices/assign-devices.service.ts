@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    ConflictException,
     ForbiddenException, Injectable, NotFoundException, UnauthorizedException
 } from '@nestjs/common';
 import {
@@ -87,26 +88,17 @@ export class AssignDevicesService {
 
     async update({ id, data, actor }: UpdateAssignDeviceMsg): Promise<AssignDeviceView> {
         const assign = await this.findById(id);
+        if (actor.employeeId !== assign.creatorId)
+            throw new UnauthorizedException('Unauthorized to perform this action');
         if (assign.status !== RequestStatus.PENDING)
             throw new ForbiddenException('Forbid to update this assign device request');
+        const category = data.categoryId? await this.categoriesService.findById(data.categoryId) : undefined;
 
-        let patch = {};
-        if (actor.roleCode === Role.MANAGER) {
-            if (!data.status) throw new BadRequestException('Assign device status requested');
-            if (data.status === RequestStatus.PENDING)
-                throw new BadRequestException('Cannot pending an assign device request');
-
-            patch = {
-                status: data.status,
-                approver_id: actor.employeeId,
-                approved_at: new Date(),
-            };
-        } else if (actor.employeeId === assign.creatorId) {
-            patch = {
-                reason: data.reason,
-                require: data.require,
-            };
-        } else throw new UnauthorizedException('Unauthorized to perform this action');
+        const patch: Prisma.assign_devicesUpdateInput = {
+            reason: data.reason,
+            require: data.require,
+            ...(category && {categories: { connect: { id: category.id }}}),
+        };
         const changedFields = Object.entries(patch)
             .filter(([, value]) => value !== undefined)
             .map(([key]) => key);
@@ -119,6 +111,29 @@ export class AssignDevicesService {
         });
         const view = toAssignDeviceView(updated);
         this.events.updated(view, changedFields, actor.sub);
+        return view;
+    }
+
+    async confirm({ id, data, actor }: UpdateAssignDeviceMsg): Promise<AssignDeviceView> {
+        const assign = await this.findById(id);
+        if (!data.status) return assign
+        if (assign.status !== RequestStatus.PENDING)
+            throw new ForbiddenException('Forbid to update this assign device request');
+        if (data.status === RequestStatus.PENDING)
+            throw new ConflictException('Cannot pending an assign device request');
+
+        const patch: Prisma.assign_devicesUpdateInput = {
+            status: data.status,
+            approver_id: actor.employeeId,
+            approved_at: new Date(),
+        };
+        const updated = await this.prisma.assign_devices.update({
+            where: { id },
+            data: patch,
+            include: { categories: { select: { name: true } } },
+        });
+        const view = toAssignDeviceView(updated);
+        this.events.confirmed(view, actor.sub);
         return view;
     }
 

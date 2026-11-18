@@ -156,6 +156,7 @@ export class CreateAssignDeviceDto {
 }
 
 export class UpdateAssignDeviceDto {
+    @IsNotEmpty() @IsInt() @Min(1) categoryId?: number;
     @IsOptional() @IsString() reason?: string;
     @IsOptional() @IsString() require?: string;
     @IsOptional() @IsIn(Object.values(RequestStatus)) status?: RequestStatus;

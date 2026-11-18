@@ -1,5 +1,5 @@
 import {
-    ForbiddenException, Injectable, NotFoundException, UnauthorizedException
+    ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException
 } from '@nestjs/common';
 import {
     CreateDisposeDeviceMsg, DisposeDeviceView, DeviceState,
@@ -10,6 +10,7 @@ import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toDisposeDeviceView } from '../views.mapper';
 import { DevicesService } from '../devices/devices.service';
+import { isAllowedToChangeState } from '../device-state-machine';
 
 @Injectable()
 export class DisposeDevicesService {
@@ -20,16 +21,9 @@ export class DisposeDevicesService {
     ) {}
 
     async create({ dto, actor }: CreateDisposeDeviceMsg): Promise<DisposeDeviceView> {
-        if (actor.roleCode !== Role.ADMIN && actor.roleCode !== Role.MANAGER)
-            throw new UnauthorizedException('Unauthorized to perform this action');
-
         const device = await this.devicesService.findById(dto.deviceId);
-        const excluded: DeviceState[] = [
-            DeviceState.AVAILABLE,
-            DeviceState.AWAITING_DISPOSED,
-        ];
-        if (!excluded.includes(device.state))
-            throw new ForbiddenException('Forbid to dispose this device');
+        if (!isAllowedToChangeState(device.state, DeviceState.DISPOSED))
+            throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
 
         const [_, disposal] = await this.prisma.$transaction([
             this.prisma.devices.update({

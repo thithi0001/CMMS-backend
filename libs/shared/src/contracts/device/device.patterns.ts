@@ -36,6 +36,7 @@ export const ASSIGN_DEVICE_CMD = {
     CREATE: 'cmd.assign_device.create',
     UPDATE: 'cmd.assign_device.update',
     DELETE: 'cmd.assign_device.delete',
+    CONFIRM: 'cmd.assign_device.confirm',
 } as const;
 
 export const RETRIEVE_DEVICE_CMD = {
@@ -69,6 +70,7 @@ export const ASSIGN_DEVICE_EVT = {
     CREATED: 'evt.assign_device.created',
     UPDATED: 'evt.assign_device.updated',
     DELETED: 'evt.assign_device.deleted',
+    CONFIRMED: 'evt.assign_device.confirmed',
 } as const;
 
 export const RETRIEVE_DEVICE_EVT = {

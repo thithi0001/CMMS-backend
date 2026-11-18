@@ -1,6 +1,5 @@
 import {
-    BadRequestException,
-    ConflictException, ForbiddenException, Injectable, NotFoundException
+    BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import {
@@ -65,11 +64,7 @@ export class CategoriesService {
     }
 
     async findAll(q: FindCategoryQueryDto): Promise<Paginated<CategoryView>> {
-        const {
-            page = 1,
-            limit = 20,
-            isActive = true,
-        } = q;
+        const { page = 1, limit = 20, isActive = true } = q;
         const where: Prisma.categoriesWhereInput = {
             is_active: isActive,
             ...(q.search && {
@@ -98,8 +93,7 @@ export class CategoriesService {
 
     async findById(id: number): Promise<CategoryView> {
         const category = await this.findCategoryById(id);
-        if (!category)
-            throw new NotFoundException('Category not found');
+        if (!category) throw new NotFoundException('Category not found');
         return toCategoryView(category);
     }
 
@@ -126,21 +120,16 @@ export class CategoriesService {
             interval_unit: data.intervalUnit,
             depreciation_period_min_months: min,
             depreciation_period_max_months: max,
-            updated_at: new Date(),
         };
-
         const changedFields = Object.entries(patch)
-            .filter(([,v]) => v !== undefined)
-            .map(([k]) => k);
-
+        .filter(([,v]) => v !== undefined)
+        .map(([k]) => k);
+        if (!changedFields.length) return category;
+        
         const updated = await this.prisma.categories.update({
-            where: { id: category.id },
-            data: patch,
+            where: { id }, data: patch,
         });
-
-        if (changedFields.length)
-            this.events.updated(category.id, changedFields, actor.sub);
-
+        this.events.updated(category.id, changedFields, actor.sub);
         return toCategoryView(updated);
     }
     
@@ -149,14 +138,10 @@ export class CategoriesService {
 
         const deleted = await this.prisma.categories.update({
             where: { id },
-            data: {
-                is_active: false,
-                updated_at: new Date(),
-            },
+            data: { is_active: false },
         });
         const view = toCategoryView(deleted);
         this.events.deleted(view, actor.sub);
-
         return view;
     }
 }

@@ -21,8 +21,6 @@ export class RetrieveDevicesService {
 
     async create({ dto, actor }: CreateRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
         const device = await this.devicesService.findById(dto.deviceId);
-        if (actor.roleCode === Role.TECHNICIAN)
-            throw new UnauthorizedException('Unauthorized to perform this action');
 
         const retrieve = await this.prisma.retrieve_devices.create({
             data: {
@@ -97,8 +95,7 @@ export class RetrieveDevicesService {
         const changedFields = Object.entries(patch)
             .filter(([, value]) => value !== undefined)
             .map(([key]) => key);
-        if (!changedFields.length)
-            return retrieve;
+        if (!changedFields.length) return retrieve;
 
         const updated = await this.prisma.retrieve_devices.update({
             where: { id: retrieve.id },
@@ -109,6 +106,8 @@ export class RetrieveDevicesService {
         this.events.updated(view, changedFields, actor.sub);
         return view;
     }
+
+    async confirm
 
     async delete({ id, actor }: DeleteRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
         const retrieve = await this.findById(id);
