@@ -6,73 +6,116 @@ import {
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
+import { InventorySourceType } from './inventory.enums';
 
 // extend source
 export class CreateInventorySourceDto {
-    name
-    type
+    @IsNotEmpty() @IsString() name!: string;
+    @IsNotEmpty() @IsString() code!: string;
+    @IsNotEmpty() @IsIn(Object.values(InventorySourceType)) type!: InventorySourceType;
+}
+
+export class UpdateInventorySourceDto {
+    @IsOptional() @IsString() name?: string;
+    @IsOptional() @IsString() code?: string;
+    @IsOptional() @IsIn(Object.values(InventorySourceType)) type?: InventorySourceType;
+}
+
+export class FindInventorySourceQueryDto extends FindQueryDto {
+    @IsOptional() @IsIn(Object.values(InventorySourceType)) type?: InventorySourceType;
 }
 
 export class CreateItemDto {
-    manufacturerId
-    supplierId
-    name
-    code
-    unit
-    description
-    minimumStock
-    imgUrl
+    @IsInt() @Min(1) manufacturerId!: number;
+    @IsInt() @Min(1) supplierId!: number;
+    @IsNotEmpty() @IsString() name!: string;
+    @IsNotEmpty() @IsString() code!: string;
+    @IsNotEmpty() @IsString() unit!: string;
+    @IsString() description?: string;
+    @IsInt() @Min(1) minimum!: number;
+    @IsNotEmpty() @IsString() imgUrl?: string;
 }
 
-export class UpdateItemDto {}
+export class UpdateItemDto {
+    @IsOptional() @IsString() name?: string;
+    @IsOptional() @IsString() code?: string;
+    @IsOptional() @IsString() unit?: string;
+    @IsOptional() @IsString() description?: string;
+    @IsOptional() @IsInt() @Min(1) minimum?: number;
+    @IsOptional() @IsString() imgUrl?: string;
+}
+
 export class FindItemQueryDto extends FindQueryDto {
-    unit
-    supplier
-    manufacturer
+    @IsOptional() @IsString() unit?: string;
+    @IsOptional() @IsInt() @Min(1) manufacturerId?: number;
+    @IsOptional() @IsInt() @Min(1) supplierId?: number;
+    @IsOptional() @IsBoolean() isLow?: boolean;
 }
 
 export class CreateBatchDto {
-    itemId
-    quantity
-    remainQuantity
-    unitPrice
-    totalPrice
-    importDate
+    @IsInt() @Min(1) itemId!: number;
+    @IsInt() @Min(1) quantity!: number;
+    
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{1,16}(?:\.\d{1,2})?$/, {
+        message: 'unitPrice phải không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân'
+    })
+    unitPrice!: string;
+    
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'importDate phải có định dạng YYYY-MM-DD',
+    })
+    @IsDateString(
+        { strict: true },
+        { message: 'importDate không phải ngày hợp lệ' },
+    )
+    importDate!: string;
 }
 
 export class FindBatchQueryDto extends FindQueryDto {
-    userId
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) itemId?: number;
 }
 
 export class CreateRequireItemDto {
-    itemId?
-    reason
-    requires
-    quantity
+    @IsOptional() @IsInt() @Min(1) itemId?: number;
+    @IsOptional() @IsString() reason?: string;
+    @IsOptional() @IsString() requires?: string;
+    @IsOptional() @IsInt() @Min(1) quantity?: number;
+}
+
+export class UpdateRequireItemDto {
+    @IsOptional() @IsInt() @Min(1) itemId?: number | null;
+    @IsOptional() @IsString() reason?: string;
+    @IsOptional() @IsString() requires?: string;
+    @IsOptional() @IsInt() @Min(1) quantity?: number;
 }
 
 export class FindRequireItemQueryDto extends FindQueryDto {
-    userId
-    itemId
-    isConfirmed
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) itemId?: number;
+    @IsOptional() @IsBoolean() isConfirmed?: boolean;
+    @IsOptional() @IsBoolean() isFulfilled?: boolean;
 }
 
 export class CreateUsageItemDetailDto {
-    batchId
-    takeQuantity
+    @IsInt() @Min(1) batchId!: number;
+    @IsInt() @Min(1) take!: number;
 }
 
 export class UpdateUsageItemDetailDto {
-    usedQuantity
+    @IsInt() @Min(1) used!: number;
 }
 
 export class CreateUsageItemListDto {
-    taskId
+    @IsInt() @Min(1) taskId!: number;
     list
 }
 
 export class FindUsageItemListQueryDto extends FindQueryDto {
-    userId
-    taskId
+    @IsOptional() @IsInt() @Min(1) userId?: number;
+    @IsOptional() @IsInt() @Min(1) taskId?: number;
 }
 

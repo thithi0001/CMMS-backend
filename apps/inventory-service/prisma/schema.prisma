@@ -69,12 +69,14 @@ model require_items {
   id           Int       @id @default(autoincrement())
   item_id      Int?
   creator_id   Int
-  confirmer_id Int
-  is_confirmed Boolean?  @default(false)
+  confirmer_id Int?
+  is_confirmed Boolean   @default(false)
   reason       String?
   requires     String?
   quantity     Int       @default(1)
   created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  is_fulfilled Boolean   @default(false)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
   items        items?    @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([item_id, is_confirmed], map: "idx_require_items_item_confirmed")
@@ -82,10 +84,11 @@ model require_items {
 
 model sources {
   id                                   Int         @id @default(autoincrement())
-  name                                 String?     @db.VarChar(100)
+  name                                 String      @db.VarChar(100)
   type                                 source_type
   created_at                           DateTime?   @default(now()) @db.Timestamptz(6)
   updated_at                           DateTime?   @default(now()) @db.Timestamptz(6)
+  code                                 String      @unique @db.VarChar(20)
   items_items_manufacturer_idTosources items[]     @relation("items_manufacturer_idTosources")
   items_items_supplier_idTosources     items[]     @relation("items_supplier_idTosources")
 }
