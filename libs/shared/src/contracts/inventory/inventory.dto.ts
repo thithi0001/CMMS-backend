@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer';
 import {
-    IsBoolean, IsDateString,
+    IsArray, IsBoolean, IsDateString,
     IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString,
-    Matches, Max, MaxLength, Min, MinLength
+    Matches, Max, MaxLength, Min, MinLength, ValidateNested
 } from 'class-validator';
 import { Role } from '@app/shared/types/role';
 import { FindQueryDto } from '@app/shared/types/find-query';
@@ -101,8 +101,8 @@ export class FindRequireItemQueryDto extends FindQueryDto {
 }
 
 export class CreateUsageItemDetailDto {
-    @IsInt() @Min(1) batchId!: number;
-    @IsInt() @Min(1) take!: number;
+    @IsInt() @Min(1) itemId!: number;
+    @IsInt() @Min(1) quantity!: number;
 }
 
 export class UpdateUsageItemDetailDto {
@@ -111,7 +111,11 @@ export class UpdateUsageItemDetailDto {
 
 export class CreateUsageItemListDto {
     @IsInt() @Min(1) taskId!: number;
-    list
+    
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateUsageItemDetailDto)
+    list!: CreateUsageItemDetailDto[];
 }
 
 export class FindUsageItemListQueryDto extends FindQueryDto {

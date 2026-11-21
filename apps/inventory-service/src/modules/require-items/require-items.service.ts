@@ -22,7 +22,7 @@ export class RequireItemsService {
         private readonly events: RequireItemEventsPublisher,
     ) {}
 
-    private include: Prisma.require_itemsInclude = {
+    private readonly include: Prisma.require_itemsInclude = {
         items: { select: {
             id: true,
             name: true,

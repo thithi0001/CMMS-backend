@@ -22,7 +22,7 @@ export class BatchesService {
         private readonly events: BatchEventsPublisher,
     ) {}
 
-    private include: Prisma.batchesInclude = {
+    private readonly include: Prisma.batchesInclude = {
         items: { select: {
             id: true,
             name: true,

@@ -95,10 +95,20 @@ export function toRequireItemView(r: RequireItemWithRelation): RequireItemView {
 type UsageItemWithRelations = Prisma.usage_item_listsGetPayload<{
     include: {
         usage_item_details: {
-            include: {
-                batches: { include: { items: { select: { name: true, code: true }}}},
+            select: {
+                id: true,
+                batch_id: true,
+                take_quantity: true,
+                used_quantity: true,
+                updated_at: true,
+                batches: {
+                    select: {
+                        item_id: true,
+                        items: { select: { name: true, code: true } },
+                    },
+                },
             },
-        },
+        }
     };
 }>;
 export function toUsageItemView(u: UsageItemWithRelations): UsageItemView {
@@ -108,16 +118,13 @@ export function toUsageItemView(u: UsageItemWithRelations): UsageItemView {
         taskId: u.task_id,
         details: u.usage_item_details.map(detail => ({
             id: detail.id,
-            batch: {
-                id: detail.batch_id,
-                item: {
-                    id: detail.batches.item_id,
-                    name: detail.batches.items.name,
-                    code: detail.batches.items.code,
-                },
-            },
+            itemId: detail.batches.item_id,
+            batchId: detail.batch_id,
+            name: detail.batches.items.name,
+            code: detail.batches.items.code,
             take: detail.take_quantity ?? 0,
-            used: detail.used_quantity ?? undefined,
+            ...(detail.used_quantity != null 
+                ? { used: detail.used_quantity } : {}),
             updatedAt: detail.updated_at?.toISOString(),
         })),
         createdAt: u.created_at?.toISOString(),

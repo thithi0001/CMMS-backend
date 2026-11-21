@@ -19,12 +19,10 @@ export interface CreateRequireItemMsg { dto: CreateRequireItemDto, actor: JwtPay
 export interface UpdateRequireItemMsg { id: number, data: UpdateRequireItemDto, actor: JwtPayload }
 export interface RequireItemActionMsg { id: number, actor: JwtPayload }
 export interface DeleteRequireItemMsg extends RequireItemActionMsg {}
-export interface FindRequireItemMsg { q: FindRequireItemQueryDto, actor: JwtPayload }
 
 // === USAGE ITEMS ===
-export interface CreateUsageItemMsg { dto: CreateUsageItemListDto, actor: JwtPayload }
+export interface CreateUsageItemListMsg { dto: CreateUsageItemListDto, actor: JwtPayload }
 export interface DeleteUsageItemMsg { id: number, actor: JwtPayload }
-export interface FindUsageItemMsg { q: FindUsageItemListQueryDto, actor: JwtPayload }
 
 // === USAGE ITEM DETAILS ===
 export interface CreateUsageItemDetailMsg { dto: CreateUsageItemDetailDto, actor: JwtPayload }

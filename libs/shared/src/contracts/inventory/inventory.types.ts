@@ -72,14 +72,10 @@ export interface UsageItemView {
     taskId: number;
     details: Array<{
         id: number;
-        batch: {
-            id: number;
-            item: {
-                id: number;
-                name: string | null;
-                code: string;
-            },
-        },
+        itemId: number;
+        batchId: number;
+        name: string | null;
+        code: string;
         take: number;
         used?: number;
         updatedAt?: string;
