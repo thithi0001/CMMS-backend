@@ -1,5 +1,5 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
-import { CreateBatchDto, CreateInventorySourceDto, CreateItemDto, CreateRequireItemDto, CreateUsageItemDetailDto, CreateUsageItemListDto, FindInventorySourceQueryDto, FindRequireItemQueryDto, FindUsageItemListQueryDto, UpdateInventorySourceDto, UpdateItemDto, UpdateRequireItemDto, UpdateUsageItemDetailDto } from "./inventory.dto";
+import { CreateBatchDto, CreateInventorySourceDto, CreateItemDto, CreateRequireItemDto, CreateUsageItemDetailDto, CreateUsageItemListDto, FindBatchQueryDto, FindInventorySourceQueryDto, FindRequireItemQueryDto, FindUsageItemListQueryDto, UpdateInventorySourceDto, UpdateItemDto, UpdateRequireItemDto, UpdateUsageItemDetailDto } from "./inventory.dto";
 
 // === SOURCES ===
 export interface CreateInventorySourceMsg { dto: CreateInventorySourceDto, actor: JwtPayload }
@@ -12,7 +12,7 @@ export interface UpdateItemMsg { id: number, data: UpdateItemDto, actor: JwtPayl
 
 // === BATCHES ===
 export interface CreateBatchMsg { dto: CreateBatchDto, actor: JwtPayload }
-export interface FindBatchMsg { id: number, actor: JwtPayload }
+export interface FindBatchMsg { q: FindBatchQueryDto, actor: JwtPayload }
 
 // === REQUIRE ITEMS ===
 export interface CreateRequireItemMsg { dto: CreateRequireItemDto, actor: JwtPayload }

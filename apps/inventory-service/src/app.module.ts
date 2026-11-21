@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { InventorySourcesModule } from './modules/sources/sources.module';
 import { ItemsModule } from './modules/items/items.module';
+import { BatchesModule } from './modules/batches/batches.module';
 
 @Module({
     imports: [
@@ -15,5 +16,6 @@ import { ItemsModule } from './modules/items/items.module';
         MessagingModule,
         InventorySourcesModule,
         ItemsModule,
+        BatchesModule,
     ],
 }) export class AppModule {}

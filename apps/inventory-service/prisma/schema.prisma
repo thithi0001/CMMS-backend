@@ -19,6 +19,7 @@ model batches {
   total_price        Decimal?             @db.Decimal(18, 2)
   created_at         DateTime?            @default(now()) @db.Timestamptz(6)
   import_date        DateTime             @db.Date
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
   items              items                @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usage_item_details usage_item_details[]
 

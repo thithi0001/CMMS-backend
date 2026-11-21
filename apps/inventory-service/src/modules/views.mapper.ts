@@ -65,6 +65,7 @@ export function toBatchView(batch: BatchWithRelation): BatchView {
         totalPrice: batch.total_price?.toString(),
         importDate: batch.import_date.toDateString(),
         createdAt: batch.created_at?.toISOString(),
+        updatedAt: batch.updated_at?.toISOString(),
     };
 }
 

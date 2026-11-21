@@ -45,6 +45,7 @@ export interface BatchView {
     totalPrice?: string;
     importDate: string;
     createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface RequireItemView {

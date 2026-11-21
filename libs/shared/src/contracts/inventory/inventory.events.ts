@@ -17,3 +17,9 @@ export interface RequireItemEventPayload {
     creatorId: number;
     changedFields?: string[];
 }
+
+export interface BatchEventPayload {
+    batchId: number;
+    itemId: number;
+    itemCode: string;
+}
