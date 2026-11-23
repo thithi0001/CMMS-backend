@@ -81,8 +81,7 @@ export class BatchesService {
     async create({ dto, actor }: CreateBatchMsg): Promise<BatchView> {
         const batch = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`
-                SELECT id
-                FROM sources
+                SELECT id FROM items
                 WHERE id = ${dto.itemId}
                 FOR UPDATE
             `;
