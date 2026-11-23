@@ -98,12 +98,13 @@ model usage_item_details {
   id               Int              @id @default(autoincrement())
   list_id          Int
   batch_id         Int
-  take_quantity    Int?
-  used_quantity    Int?
+  take_quantity    Int              @default(1)
+  used_quantity    Int              @default(0)
   updated_at       DateTime?        @default(now()) @db.Timestamptz(6)
   batches          batches          @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usage_item_lists usage_item_lists @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@unique([list_id, batch_id], map: "ug_usage_item_detail_list_batch")
   @@index([batch_id], map: "idx_usage_item_details_batch_id")
   @@index([list_id], map: "idx_usage_item_details_list_id")
 }
@@ -113,8 +114,10 @@ model usage_item_lists {
   creator_id         Int
   task_id            Int
   created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  is_blocked         Boolean              @default(false)
   usage_item_details usage_item_details[]
 
+  @@unique([task_id, creator_id], map: "uq_usage_item_lists_task_creator")
   @@index([task_id], map: "idx_usage_item_lists_task_id")
 }
 
