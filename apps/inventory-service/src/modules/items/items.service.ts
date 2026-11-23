@@ -86,8 +86,7 @@ export class ItemsService {
             // Khóa theo thứ tự ID để giảm nguy cơ deadlock.
             for (const sourceId of sourceIds) {
                 await tx.$queryRaw`
-                    SELECT id
-                    FROM sources
+                    SELECT id FROM sources
                     WHERE id = ${sourceId}
                     FOR UPDATE
                 `;

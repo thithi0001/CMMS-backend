@@ -144,9 +144,9 @@ export class InventorySourcesService {
     async delete({ id, actor }: DeleteInventorySourceMsg): Promise<InventorySourceView> {
         const deleted = await this.prisma.$transaction(async tx => {
             await tx.$queryRaw`
-            SELECT id FROM sources
-            WHERE id = ${id}
-            FOR UPDATE
+                SELECT id FROM sources
+                WHERE id = ${id}
+                FOR UPDATE
             `;
             
             const source = await tx.sources.findUnique({ where: { id }});
