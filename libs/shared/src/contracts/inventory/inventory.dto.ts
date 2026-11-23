@@ -1,5 +1,7 @@
 import { Type } from 'class-transformer';
 import {
+    ArrayNotEmpty,
+    ArrayUnique,
     IsArray, IsBoolean, IsDateString,
     IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString,
     Matches, Max, MaxLength, Min, MinLength, ValidateNested
@@ -100,22 +102,26 @@ export class FindRequireItemQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isFulfilled?: boolean;
 }
 
-export class CreateUsageItemDetailDto {
+export class UsageItemRequestDto {
     @IsInt() @Min(1) itemId!: number;
-    @IsInt() @Min(1) quantity!: number;
+    @IsInt() @Min(1) requestedQuantity!: number;
 }
 
 export class UpdateUsageItemDetailDto {
-    @IsInt() @Min(1) used!: number;
+    @IsInt() @Min(1) itemId!: number;
+    @IsOptional() @IsInt() @Min(1) increase?: number;
+    @IsOptional() @IsInt() @Min(0) used?: number;
 }
 
 export class CreateUsageItemListDto {
     @IsInt() @Min(1) taskId!: number;
     
     @IsArray()
+    @ArrayNotEmpty()
+    @ArrayUnique((item: UsageItemRequestDto) => item.itemId)
     @ValidateNested({ each: true })
-    @Type(() => CreateUsageItemDetailDto)
-    list!: CreateUsageItemDetailDto[];
+    @Type(() => UsageItemRequestDto)
+    requestedItems!: UsageItemRequestDto[];
 }
 
 export class FindUsageItemListQueryDto extends FindQueryDto {

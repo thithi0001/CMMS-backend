@@ -1,5 +1,5 @@
 import { JwtPayload } from "@app/shared/types/jwt-payload";
-import { CreateBatchDto, CreateInventorySourceDto, CreateItemDto, CreateRequireItemDto, CreateUsageItemDetailDto, CreateUsageItemListDto, FindBatchQueryDto, FindInventorySourceQueryDto, FindRequireItemQueryDto, FindUsageItemListQueryDto, UpdateInventorySourceDto, UpdateItemDto, UpdateRequireItemDto, UpdateUsageItemDetailDto } from "./inventory.dto";
+import { CreateBatchDto, CreateInventorySourceDto, CreateItemDto, CreateRequireItemDto, CreateUsageItemListDto, FindBatchQueryDto, FindInventorySourceQueryDto, FindRequireItemQueryDto, FindUsageItemListQueryDto, UpdateInventorySourceDto, UpdateItemDto, UpdateRequireItemDto, UpdateUsageItemDetailDto, UsageItemRequestDto } from "./inventory.dto";
 
 // === SOURCES ===
 export interface CreateInventorySourceMsg { dto: CreateInventorySourceDto, actor: JwtPayload }
@@ -22,11 +22,12 @@ export interface DeleteRequireItemMsg extends RequireItemActionMsg {}
 
 // === USAGE ITEMS ===
 export interface CreateUsageItemListMsg { dto: CreateUsageItemListDto, actor: JwtPayload }
-export interface DeleteUsageItemMsg { id: number, actor: JwtPayload }
+export interface AddUsageItemMsg { id: number, data: UsageItemRequestDto[], actor: JwtPayload }
+export interface UpdateUsageItemMsg { id: number, data: UpdateUsageItemDetailDto[], actor: JwtPayload }
+export interface BlockUsageItemListMsg { id: number, actor: JwtPayload }
 
 // === USAGE ITEM DETAILS ===
-export interface CreateUsageItemDetailMsg { dto: CreateUsageItemDetailDto, actor: JwtPayload }
-export interface UpdateUsageItemDetailMsg { id: number, data: UpdateUsageItemDetailDto, actor: JwtPayload }
+export interface UpdateUsageItemMsg { id: number, data: UpdateUsageItemDetailDto[], actor: JwtPayload }
 
 
 

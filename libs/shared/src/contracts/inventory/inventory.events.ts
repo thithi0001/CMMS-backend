@@ -23,3 +23,11 @@ export interface BatchEventPayload {
     itemId: number;
     itemCode: string;
 }
+
+export interface UsageItemListEventPayload {
+    listId: number;
+    creatorId: number;
+    totalItem: number;
+    addedItems?: number[];
+    updatedItems?: number[];
+}

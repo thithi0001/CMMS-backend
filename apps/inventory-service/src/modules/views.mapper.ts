@@ -116,6 +116,7 @@ export function toUsageItemView(u: UsageItemWithRelations): UsageItemView {
         id: u.id,
         creatorId: u.creator_id,
         taskId: u.task_id,
+        isBlocked: u.is_blocked,
         details: u.usage_item_details.map(detail => ({
             id: detail.id,
             itemId: detail.batches.item_id,

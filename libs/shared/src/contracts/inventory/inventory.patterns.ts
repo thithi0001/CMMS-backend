@@ -58,26 +58,18 @@ export const REQUIRE_ITEM_EVT = {
     FULFILLED: 'evt.require_item.fulfilled',
 } as const;
 
-export const USAGE_ITEM_CMD = {
-    CREATE: 'cmd.usage_item.create',
-    DELETE: 'cmd.usage_item.delete',
-    FIND_ALL: 'cmd.usage_item.find_all',
-    FIND_BY_ID: 'cmd.usage_item.find_by_id',
+export const USAGE_ITEM_LIST_CMD = {
+    CREATE: 'cmd.usage_item_list.create',
+    UPDATE: 'cmd.usage_item_list.update',
+    ADD_ITEMS: 'cmd.usage_item_list.add_items',
+    FIND_ALL: 'cmd.usage_item_list.find_all',
+    FIND_BY_ID: 'cmd.usage_item_list.find_by_id',
 } as const;
 
-export const USAGE_ITEM_EVT = {
-    CREATED: 'cmd.usage_item.created',
-    DELETED: 'cmd.usage_item.deleted',
-} as const;
-
-export const USAGE_ITEM_DETAIL_CMD = {
-    CREATE: 'cmd.usage_item_detail.create',
-    UPDATE: 'cmd.usage_item_detail.update',
-} as const;
-
-export const USAGE_ITEM_DETAIL_EVT = {
-    CREATED: 'evt.usage_item_detail.created',
-    UPDATED: 'evt.usage_item_detail.updated',
+export const USAGE_ITEM_LIST_EVT = {
+    CREATED: 'evt.usage_item_list.created',
+    UPDATED: 'evt.usage_item_list.updated',
+    ITEMS_ADDED: 'evt.usage_item_list.items_added',
 } as const;
 
 

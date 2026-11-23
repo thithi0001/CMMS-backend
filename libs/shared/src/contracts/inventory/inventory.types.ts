@@ -70,6 +70,7 @@ export interface UsageItemView {
     id: number;
     creatorId: number;
     taskId: number;
+    isBlocked: boolean;
     details: Array<{
         id: number;
         itemId: number;
@@ -81,4 +82,25 @@ export interface UsageItemView {
         updatedAt?: string;
     }>;
     createdAt?: string;
+}
+
+export interface UsageItemCreateSuccess {
+    itemId: number;
+    requestedQuantity: number;
+    allocatedQuantity: number;
+}
+
+export interface UsageItemCreateShortage {
+    itemId: number;
+    currentQuantity: number;
+    requestedQuantity: number;
+    shortageQuantity: number;
+}
+
+export interface UsageItemListResult {
+    view: UsageItemView | null;
+    successfulItems: UsageItemCreateSuccess[];
+    shortageItems: UsageItemCreateShortage[];
+    notFoundItemIds: number[];
+    alreadyInListItems?: number[];
 }
