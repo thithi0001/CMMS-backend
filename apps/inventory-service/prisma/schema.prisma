@@ -99,7 +99,7 @@ model usage_item_details {
   list_id          Int
   batch_id         Int
   take_quantity    Int              @default(1)
-  used_quantity    Int              @default(0)
+  used_quantity    Int?
   updated_at       DateTime?        @default(now()) @db.Timestamptz(6)
   batches          batches          @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usage_item_lists usage_item_lists @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

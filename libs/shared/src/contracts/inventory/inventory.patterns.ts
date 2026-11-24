@@ -61,7 +61,7 @@ export const REQUIRE_ITEM_EVT = {
 export const USAGE_ITEM_LIST_CMD = {
     CREATE: 'cmd.usage_item_list.create',
     UPDATE: 'cmd.usage_item_list.update',
-    ADD_ITEMS: 'cmd.usage_item_list.add_items',
+    BLOCK: 'cmd.usage_item_list.block',
     FIND_ALL: 'cmd.usage_item_list.find_all',
     FIND_BY_ID: 'cmd.usage_item_list.find_by_id',
 } as const;
@@ -69,7 +69,7 @@ export const USAGE_ITEM_LIST_CMD = {
 export const USAGE_ITEM_LIST_EVT = {
     CREATED: 'evt.usage_item_list.created',
     UPDATED: 'evt.usage_item_list.updated',
-    ITEMS_ADDED: 'evt.usage_item_list.items_added',
+    BLOCKED: 'evt.usage_item_list.blocked',
 } as const;
 
 

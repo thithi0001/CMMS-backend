@@ -97,10 +97,24 @@ export interface UsageItemCreateShortage {
     shortageQuantity: number;
 }
 
-export interface UsageItemListResult {
+export interface CreateUsageItemListResult {
     view: UsageItemView | null;
     successfulItems: UsageItemCreateSuccess[];
     shortageItems: UsageItemCreateShortage[];
     notFoundItemIds: number[];
-    alreadyInListItems?: number[];
+}
+
+export interface UsageItemUpdateSuccess {
+    itemId: number;
+    addedToList: boolean;
+    quantityAdded: number;
+    usedQuantity?: number;
+}
+
+export interface UpdateUsageItemListResult {
+    view: UsageItemView;
+    successfulItems: UsageItemUpdateSuccess[];
+    shortageItems: UsageItemCreateShortage[];
+    notFoundItemIds: number[];
+    notInListItemIds: number[];
 }

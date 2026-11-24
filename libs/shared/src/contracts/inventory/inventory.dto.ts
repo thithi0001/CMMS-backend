@@ -107,12 +107,6 @@ export class UsageItemRequestDto {
     @IsInt() @Min(1) requestedQuantity!: number;
 }
 
-export class UpdateUsageItemDetailDto {
-    @IsInt() @Min(1) itemId!: number;
-    @IsOptional() @IsInt() @Min(1) increase?: number;
-    @IsOptional() @IsInt() @Min(0) used?: number;
-}
-
 export class CreateUsageItemListDto {
     @IsInt() @Min(1) taskId!: number;
     
@@ -122,6 +116,21 @@ export class CreateUsageItemListDto {
     @ValidateNested({ each: true })
     @Type(() => UsageItemRequestDto)
     requestedItems!: UsageItemRequestDto[];
+}
+
+export class UpdateUsageItemListRequestDto {
+    @IsInt() @Min(1) itemId!: number;
+    @IsOptional() @IsInt() @Min(1) quantityToAdd?: number;
+    @IsOptional() @IsInt() @Min(0) used?: number;
+}
+
+export class UpdateUsageItemListDto {
+    @IsArray()
+    @ArrayNotEmpty()
+    @ArrayUnique((item: UpdateUsageItemListRequestDto) => item.itemId)
+    @ValidateNested({ each: true })
+    @Type(() => UpdateUsageItemListRequestDto)
+    items!: UpdateUsageItemListRequestDto[];
 }
 
 export class FindUsageItemListQueryDto extends FindQueryDto {
