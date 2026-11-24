@@ -123,9 +123,8 @@ export function toUsageItemView(u: UsageItemWithRelations): UsageItemView {
             batchId: detail.batch_id,
             name: detail.batches.items.name,
             code: detail.batches.items.code,
-            take: detail.take_quantity ?? 0,
-            ...(detail.used_quantity != null 
-                ? { used: detail.used_quantity } : {}),
+            take: detail.take_quantity,
+            used: detail.used_quantity,
             updatedAt: detail.updated_at?.toISOString(),
         })),
         createdAt: u.created_at?.toISOString(),

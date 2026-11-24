@@ -78,7 +78,7 @@ export interface UsageItemView {
         name: string | null;
         code: string;
         take: number;
-        used?: number;
+        used?: number | null;
         updatedAt?: string;
     }>;
     createdAt?: string;
