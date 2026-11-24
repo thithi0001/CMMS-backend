@@ -292,7 +292,6 @@ export class UsageItemsService {
         }
 
         const result = await this.prisma.$transaction(async tx => {
-            // Lock and validate the list so concurrent updates/blocking serialize.
             // khóa danh sách cho thao tác update
             await tx.$queryRaw`
                 SELECT id FROM usage_item_lists
