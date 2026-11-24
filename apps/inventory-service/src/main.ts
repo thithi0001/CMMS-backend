@@ -18,14 +18,14 @@ async function bootstrap() {
     app.connectMicroservice(
         busServerOptions(
             config.getOrThrow<string>('RABBITMQ_URL'),
-            QUEUES.MAINTENANCE),
+            QUEUES.INVENTORY),
             { inheritAppConfig: true },
     );
 
     await app.startAllMicroservices();
     await app.init();
 
-    Logger.log(`Maintenance-service listening queue "${QUEUES.INVENTORY}"`, 'Bootstrap');
+    Logger.log(`Inventory-service listening queue "${QUEUES.INVENTORY}"`, 'Bootstrap');
 }
 
 bootstrap();

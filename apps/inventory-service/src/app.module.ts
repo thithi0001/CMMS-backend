@@ -6,6 +6,7 @@ import { InventorySourcesModule } from './modules/sources/sources.module';
 import { ItemsModule } from './modules/items/items.module';
 import { BatchesModule } from './modules/batches/batches.module';
 import { UsageItemsModule } from './modules/usage-items/usage-items.module';
+import { RequireItemsModule } from './modules/require-items/require-items.module';
 
 @Module({
     imports: [
@@ -19,5 +20,6 @@ import { UsageItemsModule } from './modules/usage-items/usage-items.module';
         ItemsModule,
         BatchesModule,
         UsageItemsModule,
+        RequireItemsModule,
     ],
 }) export class AppModule {}
