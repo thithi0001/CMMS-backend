@@ -75,7 +75,6 @@ export class CreateBatchDto {
 }
 
 export class FindBatchQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) itemId?: number;
 }
 
@@ -94,7 +93,6 @@ export class UpdateRequireItemDto {
 }
 
 export class FindRequireItemQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) itemId?: number;
     @IsOptional() @IsBoolean() isConfirmed?: boolean;
     @IsOptional() @IsBoolean() isFulfilled?: boolean;
@@ -132,7 +130,6 @@ export class UpdateUsageItemListDto {
 }
 
 export class FindUsageItemListQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
 }
 

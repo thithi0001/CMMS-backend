@@ -135,7 +135,6 @@ export class EndEmployeeDto {
 
 export class FindEmployeeQueryDto extends FindQueryDto {
     @IsOptional() @IsString() department?: string;
-    @IsOptional() @IsInt() userId?: number;
 }
 
 export class CreateExpertiseDto {
@@ -144,9 +143,7 @@ export class CreateExpertiseDto {
     @IsString() @IsOptional() description?: string;
 }
 
-export class FindExpertiseQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() userId?: number;
-}
+export class FindExpertiseQueryDto extends FindQueryDto {}
 
 export class AssignExpertiseDto {
     @IsInt() @IsNotEmpty() userId!: number;

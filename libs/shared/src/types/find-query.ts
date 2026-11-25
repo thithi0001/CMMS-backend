@@ -17,6 +17,13 @@ export class FindQueryDto {
     @Max(100)
     limit?: number;
     
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @Max(100)
+    userId?: number;
+    
     @IsOptional() @IsString() search?: string;
 
         @IsOptional()
