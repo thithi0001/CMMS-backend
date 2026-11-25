@@ -1,43 +1,60 @@
 import {
-    ConflictException, ForbiddenException, Injectable, NotFoundException
+    ConflictException, Injectable, NotFoundException, OnModuleDestroy
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import {
-    CreateItemMsg,
-    UpdateItemMsg,
+    CreateItemMsg, UpdateItemMsg,
+    ConfirmItemImageMsg,
+    RemoveItemImageMsg, RequestItemImageUploadMsg,
     FindItemQueryDto,
-    ItemView,
+    ItemView, ItemImageView,
+    ItemImageUploadTicket,
     Paginated,
     InventorySourceType,
 } from '@app/shared';
+import {
+    FILE_PURPOSES,
+    StorageService,
+    UploadRejectedException,
+} from '@app/storage';
 import { ItemEventsPublisher } from '../../messaging/publishers/item-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toItemView } from '../views.mapper';
 
 @Injectable()
-export class ItemsService {
+export class ItemsService implements OnModuleDestroy {
+    private readonly cleanupInterval: ReturnType<typeof setInterval>;
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly events: ItemEventsPublisher,
-    ) {}
+        private readonly storage: StorageService,
+    ) {
+        this.cleanupInterval = setInterval(
+            () => void this.cleanupUploadingImages(),
+            30 * 60 * 1000,
+        );
+    }
 
-    // === Nội bộ ===
-    findItemById(id: number) {
-        return this.prisma.items.findUnique({ 
-            where: { id },
-            include: {
-                sources_items_manufacturer_idTosources: true,
-                sources_items_supplier_idTosources: true,
-            },
-        });
+    private readonly itemInclude = {
+        sources_items_manufacturer_idTosources: true,
+        sources_items_supplier_idTosources: true,
+        item_images: {
+            where: { status: 'ready' as const },
+        },
+    } satisfies Prisma.itemsInclude;
+
+    onModuleDestroy() {
+        clearInterval(this.cleanupInterval);
     }
     
     // === RPC ===
     async findById(id: number): Promise<ItemView> {
-        const item = await this.findItemById(id);
+        const item = await this.prisma.items.findUnique({
+            where: { id }, include: this.itemInclude,
+        });
         if (!item) throw new NotFoundException('Item not found');
-        return toItemView(item);
+        return this.toItemView(item);
     }
     
     async findAll(q: FindItemQueryDto): Promise<Paginated<ItemView>> {
@@ -63,15 +80,12 @@ export class ItemsService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { code: 'asc' },
-                include: {
-                    sources_items_manufacturer_idTosources: true,
-                    sources_items_supplier_idTosources: true,
-                },
+                include: this.itemInclude,
             }),
         ]);
 
         return {
-            items: items.map(toItemView),
+            items: await Promise.all(items.map(item => this.toItemView(item))),
             total, page, limit
         };
     }
@@ -119,15 +133,11 @@ export class ItemsService {
                     unit: dto.unit,
                     description: dto.description,
                     minimum_stock: dto.minimum,
-                    img_url: dto.imgUrl,
                 },
-                include: {
-                    sources_items_manufacturer_idTosources: true,
-                    sources_items_supplier_idTosources: true,
-                },
+                include: this.itemInclude,
             });
         });
-        const view = toItemView(item);
+        const view = await this.toItemView(item);
         this.events.created(view, actor.sub);
         return view;
     }
@@ -149,7 +159,6 @@ export class ItemsService {
             unit: data.unit,
             description: data.description,
             minimum_stock: data.minimum,
-            img_url: data.imgUrl,
         };
         const changedFields = Object.entries(patch)
         .filter(([, value]) => value !== undefined)
@@ -158,18 +167,122 @@ export class ItemsService {
         
         const updated = await this.prisma.items.update({
             where: { id }, data: patch,
-            include: {
-                sources_items_manufacturer_idTosources: true,
-                sources_items_supplier_idTosources: true,
-            },
+            include: this.itemInclude,
         });
-        const view = toItemView(updated);
+        const view = await this.toItemView(updated);
         this.events.updated(view, changedFields, actor.sub);
         return view;
     }
 
-    // async updateStock(): Promise<ItemView> {
-        
-    // }
+    async requestImageUpload({ itemId, dto, actor }: RequestItemImageUploadMsg): Promise<ItemImageUploadTicket> {
+        await this.assertItemExists(itemId);
 
+        const { objectKey, ticket } = await this.storage.createUpload({
+            purpose: FILE_PURPOSES.ITEM_IMAGE,
+            fileName: dto.fileName,
+            mimeType: dto.mimeType,
+            sizeBytes: dto.sizeBytes,
+        });
+        const image = await this.prisma.item_images.create({
+            data: {
+                item_id: itemId,
+                object_key: objectKey,
+                file_name: dto.fileName,
+                mime_type: dto.mimeType,
+                size_bytes: BigInt(dto.sizeBytes),
+                uploaded_by: actor.sub,
+            },
+        });
+
+        return { imageId: image.id, ...ticket };
+    }
+
+    async confirmImageUpload({ itemId, imageId }: ConfirmItemImageMsg): Promise<ItemImageView> {
+        const image = await this.prisma.item_images.findFirst({
+            where: { id: imageId, item_id: itemId },
+        });
+        if (!image) throw new NotFoundException('Item image not found');
+        if (image.status === 'ready') return this.toImageView(image);
+
+        let sizeBytes: number;
+        try {
+            ({ sizeBytes } = await this.storage.verifyUpload({
+                objectKey: image.object_key,
+                purpose: FILE_PURPOSES.ITEM_IMAGE,
+                mimeType: image.mime_type,
+            }));
+        } catch (error) {
+            if (error instanceof UploadRejectedException) {
+                await this.prisma.item_images.delete({
+                    where: { id: imageId },
+                }).catch(() => undefined);
+            }
+            throw error;
+        }
+
+        const updated = await this.prisma.item_images.update({
+            where: { id: imageId },
+            data: {
+                status: 'ready',
+                size_bytes: BigInt(sizeBytes),
+            },
+        });
+        return this.toImageView(updated);
+    }
+
+    async removeImage({ itemId, imageId }: RemoveItemImageMsg) {
+        const image = await this.prisma.item_images.findFirst({
+            where: { id: imageId, item_id: itemId },
+        });
+        if (!image) throw new NotFoundException('Item image not found');
+
+        await this.storage.deleteObject(image.object_key);
+        await this.prisma.item_images.delete({ where: { id: imageId } });
+        return { message: 'Item image removed' };
+    }
+
+    private async assertItemExists(itemId: number) {
+        const item = await this.prisma.items.findUnique({
+            where: { id: itemId },
+            select: { id: true },
+        });
+        if (!item) throw new NotFoundException('Item not found');
+    }
+
+    private async toItemView(item: Parameters<typeof toItemView>[0]): Promise<ItemView> {
+        const view = toItemView(item);
+        const images = await Promise.all(
+            (item.item_images ?? []).map(image => this.toImageView(image)),
+        );
+        return { ...view, images };
+    }
+
+    private async toImageView(image: {
+        id: number;
+        object_key: string;
+        file_name: string;
+        mime_type: string;
+    }): Promise<ItemImageView> {
+        const download = await this.storage.createDownloadUrl(image.object_key, {
+            fileName: image.file_name,
+            mimeType: image.mime_type,
+        });
+        return { id: image.id, ...download };
+    }
+
+    private async cleanupUploadingImages() {
+        const ttlSeconds = Number(process.env.PENDING_UPLOAD_TTL_SECONDS ?? 86400);
+        const threshold = new Date(Date.now() - ttlSeconds * 1000);
+        const images = await this.prisma.item_images.findMany({
+            where: {
+                status: 'uploading',
+                created_at: { lt: threshold },
+            },
+        });
+
+        for (const image of images) {
+            await this.storage.deleteObject(image.object_key).catch(() => undefined);
+            await this.prisma.item_images.delete({ where: { id: image.id } }).catch(() => undefined);
+        }
+    }
 }
