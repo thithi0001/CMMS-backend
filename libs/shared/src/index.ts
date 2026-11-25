@@ -17,3 +17,4 @@ export * from './contracts/maintenance';
 // export * from './contracts/report';
 // export * from './contracts/ai-assistant';
 // export * from './contracts/audit';
+export * from './contracts/storage';
