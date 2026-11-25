@@ -1,13 +1,5 @@
 import type { DownloadUrl, UploadTicket } from '../storage';
 
-export interface ItemImageView extends DownloadUrl {
-    id: number;
-}
-
-export interface ItemImageUploadTicket extends UploadTicket {
-    imageId: number;
-}
-
 export interface InventorySourceView {
     id: number;
     name: string;
@@ -15,6 +7,14 @@ export interface InventorySourceView {
     type: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface ItemImageView extends DownloadUrl {
+    id: number;
+}
+
+export interface ItemImageUploadTicket extends UploadTicket {
+    imageId: number;
 }
 
 export interface ItemView {

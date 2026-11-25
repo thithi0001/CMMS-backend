@@ -20,15 +20,10 @@ export class InventorySourcesService {
         private readonly prisma: PrismaService,
         private readonly events: InventorySourceEventsPublisher,
     ) {}
-
-    // === Nội bộ ===
-    findSourceById(id: number) {
-        return this.prisma.sources.findUnique({ where: { id }});
-    }
-    
+   
     // === RPC ===
     async findById(id: number): Promise<InventorySourceView> {
-        const source = await this.findSourceById(id);
+        const source = await this.prisma.sources.findUnique({ where: { id }});
         if (!source) throw new NotFoundException('Source not found');
         return toInventorySourceView(source);
     }

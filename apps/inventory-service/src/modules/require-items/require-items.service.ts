@@ -22,23 +22,19 @@ export class RequireItemsService {
         private readonly events: RequireItemEventsPublisher,
     ) {}
 
-    private readonly include: Prisma.require_itemsInclude = {
+    private readonly requireItemInclude: Prisma.require_itemsInclude = {
         items: { select: {
             id: true,
             name: true,
             code: true,
         }},
     };
-    // === Nội bộ ===
-    findRequireItemById(id: number) {
-        return this.prisma.require_items.findUnique({ 
-            where: { id }, include: this.include,
-        });
-    }
     
     // === RPC ===
     async findById(id: number): Promise<RequireItemView> {
-        const r = await this.findRequireItemById(id);
+        const r = await this.prisma.require_items.findUnique({ 
+            where: { id }, include: this.requireItemInclude,
+        });
         if (!r) throw new NotFoundException('Require items request not found');
         return toRequireItemView(r);
     }
@@ -68,7 +64,7 @@ export class RequireItemsService {
                     { is_fulfilled: 'asc' },
                     { created_at: 'desc' },
                 ],
-                include: this.include,
+                include: this.requireItemInclude,
             }),
         ]);
 
@@ -87,7 +83,7 @@ export class RequireItemsService {
                 requires: dto.requires,
                 quantity: dto.quantity,
             },
-            include: this.include,
+            include: this.requireItemInclude,
         });
         const view = toRequireItemView(r);
         this.events.created(view, actor.sub);
@@ -102,7 +98,7 @@ export class RequireItemsService {
                 FOR UPDATE
             `;
             const r = await tx.require_items.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.requireItemInclude,
             });
             if (!r) throw new NotFoundException('Require items request not found');
             if (actor.employeeId !== r.creator_id)
@@ -135,7 +131,7 @@ export class RequireItemsService {
 
             const updated = await tx.require_items.update({
                 where: { id }, data: patch,
-                include: this.include,
+                include: this.requireItemInclude,
             });
             return { r: updated, changedFields };
         });
@@ -155,7 +151,7 @@ export class RequireItemsService {
             `;
 
             const r = await tx.require_items.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.requireItemInclude,
             });
             if (!r) throw new NotFoundException('Require items request not found');
             if (r.is_confirmed) throw new ForbiddenException('This require items request has been confirmed');
@@ -166,7 +162,7 @@ export class RequireItemsService {
                     confirmer_id: actor.employeeId,
                     is_confirmed: true,
                 },
-                include: this.include,
+                include: this.requireItemInclude,
             });
         });
         const view = toRequireItemView(confirmed);
@@ -183,7 +179,7 @@ export class RequireItemsService {
             `;
 
             const r = await tx.require_items.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.requireItemInclude,
             });
             if (!r) throw new NotFoundException('Require items request not found');
             if (r.is_fulfilled) throw new ForbiddenException('This require items request has been fulfilled');
@@ -191,7 +187,7 @@ export class RequireItemsService {
             return await tx.require_items.update({
                 where: { id },
                 data: { is_fulfilled: true },
-                include: this.include,
+                include: this.requireItemInclude,
             });
         });
         const view = toRequireItemView(confirmed);
@@ -208,7 +204,7 @@ export class RequireItemsService {
             `;
 
             const r = await tx.require_items.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.requireItemInclude,
             });
             if (!r) throw new NotFoundException('Require items request not found');
 
@@ -216,7 +212,7 @@ export class RequireItemsService {
                 throw new UnauthorizedException('Unauthorized to perform this action');
             
             return await tx.require_items.delete({ 
-                where: { id }, include: this.include,
+                where: { id }, include: this.requireItemInclude,
             });
         });
         const view = toRequireItemView(deleted);

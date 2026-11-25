@@ -22,24 +22,19 @@ export class BatchesService {
         private readonly events: BatchEventsPublisher,
     ) {}
 
-    private readonly include: Prisma.batchesInclude = {
+    private readonly batchInclude: Prisma.batchesInclude = {
         items: { select: {
             id: true,
             name: true,
             code: true,
         }},
     };
-
-    // === Nội bộ ===
-    findBatchById(id: number) {
-        return this.prisma.batches.findUnique({ 
-            where: { id }, include: this.include,
-        });
-    }
     
     // === RPC ===
     async findById(id: number): Promise<BatchView> {
-        const batch = await this.findBatchById(id);
+        const batch = await this.prisma.batches.findUnique({ 
+            where: { id }, include: this.batchInclude,
+        });
         if (!batch) throw new NotFoundException('Batch not found');
         return toBatchView(batch);
     }
@@ -68,7 +63,7 @@ export class BatchesService {
                     { items: { code: 'asc' }},
                     { import_date: 'desc' },
                 ],
-                include: this.include,
+                include: this.batchInclude,
             }),
         ]);
 
@@ -103,7 +98,7 @@ export class BatchesService {
                     import_date: new Date(dto.importDate),
                     total_price: unit_price.mul(dto.quantity),
                 },
-                include: this.include,
+                include: this.batchInclude,
             });
             
             await tx.items.update({

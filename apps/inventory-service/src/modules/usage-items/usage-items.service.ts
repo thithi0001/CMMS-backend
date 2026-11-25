@@ -23,7 +23,7 @@ export class UsageItemsService {
         private readonly events: UsageItemEventsPublisher,
     ) {}
 
-    private readonly include = {
+    private readonly usageItemInclude = {
         usage_item_details: {
             select: {
                 id: true,
@@ -39,13 +39,7 @@ export class UsageItemsService {
                 },
             },
         },
-    } satisfies Prisma.usage_item_listsSelect;
-    // === Nội bộ ===
-    findUsageItemById(id: number) {
-        return this.prisma.usage_item_lists.findUnique({ 
-            where: { id }, include: this.include,
-        });
-    }
+    } satisfies Prisma.usage_item_listsInclude;
 
     private async allocateQuantity(
         tx: Prisma.TransactionClient,
@@ -152,7 +146,9 @@ export class UsageItemsService {
     
     // === RPC ===
     async findById(id: number): Promise<UsageItemView> {
-        const list = await this.findUsageItemById(id);
+        const list = await this.prisma.usage_item_lists.findUnique({ 
+            where: { id }, include: this.usageItemInclude,
+        });
         if (!list) throw new NotFoundException('Usage item list not found');
         return toUsageItemView(list);
     }
@@ -171,7 +167,7 @@ export class UsageItemsService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { created_at: 'desc' },
-                include: this.include,
+                include: this.usageItemInclude,
             }),
         ]);
 
@@ -254,7 +250,7 @@ export class UsageItemsService {
 
             const list = await tx.usage_item_lists.findUnique({
                 where: { id: createdList.id },
-                include: this.include,
+                include: this.usageItemInclude,
             });
             if (!list) throw new NotFoundException('Created usage item list could not be loaded');
 
@@ -296,7 +292,7 @@ export class UsageItemsService {
             `;
 
             const list = await tx.usage_item_lists.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.usageItemInclude,
             });
             if (!list) throw new NotFoundException('Usage item list not found');
             if (actor.employeeId !== list.creator_id) 
@@ -419,7 +415,7 @@ export class UsageItemsService {
             }
 
             const updatedList = await tx.usage_item_lists.findUnique({
-                where: { id }, include: this.include,
+                where: { id }, include: this.usageItemInclude,
             });
             if (!updatedList) 
                 throw new NotFoundException('Updated usage item list could not be loaded');
@@ -460,7 +456,7 @@ export class UsageItemsService {
             `;
             const list = await tx.usage_item_lists.findUnique({
                 where: { id },
-                include: this.include,
+                include: this.usageItemInclude,
             });
             if (!list) throw new NotFoundException('Usage item list not found');
             if (actor.employeeId !== list.creator_id)
@@ -558,7 +554,7 @@ export class UsageItemsService {
             const blockedList = await tx.usage_item_lists.update({
                 where: { id },
                 data: { is_blocked: true },
-                include: this.include,
+                include: this.usageItemInclude,
             });
             return { list: blockedList, newlyBlocked: true };
         });
@@ -568,4 +564,5 @@ export class UsageItemsService {
         if (result.newlyBlocked) this.events.blocked(view, actor.sub);
         return view;
     }
+    
 }
