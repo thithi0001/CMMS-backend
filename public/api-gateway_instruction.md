@@ -12,14 +12,14 @@ Dựng khung gateway và hai nhóm route của `user-service`. Các nhóm route 
 
 | Method | Route (có tiền tố `/api`) | Quyền | Pattern gửi đi |
 |---|---|---|---|
-| POST | `/auth/register` | public | `cmd.user.register` |
 | POST | `/auth/login` | public | `cmd.user.login` |
+| POST | `/auth/refresh-token` | public | `cmd.user.refresh_token` |
 | GET | `/auth/me` | đăng nhập | `cmd.user.find_by_id` |
 | PATCH | `/auth/change-password` | đăng nhập | `cmd.user.change_password` |
 | GET | `/users` | ADMIN, MANAGER | `cmd.user.find_all` |
-| POST | `/users` | ADMIN | `cmd.user.create` |
-| GET | `/users/:id` | ADMIN, MANAGER | `cmd.user.find_by_id` |
-| PATCH | `/users/:id` | đăng nhập (service kiểm tra chính chủ/admin) | `cmd.user.update` |
+| POST | `/users` | ADMIN, MANAGER | `cmd.user.create` |
+| GET | `/users/:id` | đăng nhập | `cmd.user.find_by_id` |
+| PATCH | `/users/:id` | đăng nhập (service chỉ cho chính chủ cập nhật) | `cmd.user.update` |
 | PATCH | `/users/:id/role` | ADMIN | `cmd.user.update_role` |
 | DELETE | `/users/:id` | ADMIN (vô hiệu hóa, không xóa thật) | `cmd.user.deactivate` |
 
@@ -252,7 +252,7 @@ export class RolesGuard implements CanActivate {
     if (!roles?.length) return true; // route không yêu cầu role cụ thể
 
     const user: JwtPayload | undefined = ctx.switchToHttp().getRequest().user;
-    if (!user || !roles.includes(user.role)) {
+    if (!user || !roles.includes(user.roleCode)) {
       throw new ForbiddenException('Bạn không có quyền thực hiện thao tác này');
     }
     return true;
@@ -314,7 +314,7 @@ export class RpcToHttpFilter implements ExceptionFilter {
 import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import {
   ChangePasswordDto, ChangePasswordMsg, FindUserByIdMsg, JwtPayload, LoginDto,
-  LoginResult, RegisterDto, USER_CMD, UserView,
+  LoginResult, RefreshTokenDto, RefreshTokenResult, USER_CMD, UserView,
 } from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -325,16 +325,17 @@ export class AuthController {
   constructor(private readonly bus: BusService) {}
 
   @Public()
-  @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.bus.send<UserView, RegisterDto>(USER_CMD.REGISTER, dto);
-  }
-
-  @Public()
   @HttpCode(200)
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.bus.send<LoginResult, LoginDto>(USER_CMD.LOGIN, dto);
+  }
+
+  @Public()
+  @HttpCode(200)
+  @Post('refresh-token')
+  refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.bus.send<RefreshTokenResult, RefreshTokenDto>(USER_CMD.REFRESH_TOKEN, dto);
   }
 
   @Get('me')
@@ -372,10 +373,10 @@ export class AuthModule {}
 
 ```ts
 import {
-  Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query,
+  Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query,
 } from '@nestjs/common';
 import {
-  CreateUserDto, CreateUserMsg, DeactivateUserMsg, FindUserByIdMsg, FindUsersQueryDto,
+  CreateUserDto, CreateUserMsg, DeactivateUserMsg, FindUserByIdMsg, FindUserQueryDto,
   JwtPayload, Paginated, Role, UpdateRoleDto, UpdateRoleMsg, UpdateUserDto, UpdateUserMsg,
   USER_CMD, UserView,
 } from '@app/shared';
@@ -389,25 +390,24 @@ export class UsersController {
 
   @Roles(Role.ADMIN, Role.MANAGER)
   @Get()
-  findAll(@Query() query: FindUsersQueryDto) {
-    return this.bus.send<Paginated<UserView>, FindUsersQueryDto>(USER_CMD.FIND_ALL, query);
+  findAll(@Query() query: FindUserQueryDto) {
+    return this.bus.send<Paginated<UserView>, FindUserQueryDto>(USER_CMD.FIND_ALL, query);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MANAGER)
   @Post()
   create(@Body() dto: CreateUserDto, @CurrentUser() actor: JwtPayload) {
     return this.bus.send<UserView, CreateUserMsg>(USER_CMD.CREATE, { dto, actorId: actor.sub });
   }
 
-  @Roles(Role.ADMIN, Role.MANAGER)
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.bus.send<UserView, FindUserByIdMsg>(USER_CMD.FIND_BY_ID, { id });
   }
 
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateUserDto,
     @CurrentUser() actor: JwtPayload,
   ) {
@@ -417,20 +417,20 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @Patch(':id/role')
   updateRole(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRoleDto,
     @CurrentUser() actor: JwtPayload,
   ) {
     return this.bus.send<UserView, UpdateRoleMsg>(USER_CMD.UPDATE_ROLE, {
       id,
-      role: dto.role,
+      roleCode: dto.roleCode,
       actor,
     });
   }
 
   @Roles(Role.ADMIN)
   @Delete(':id')
-  deactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() actor: JwtPayload) {
+  deactivate(@Param('id', ParseIntPipe) id: number, @CurrentUser() actor: JwtPayload) {
     return this.bus.send<UserView, DeactivateUserMsg>(USER_CMD.DEACTIVATE, { id, actor });
   }
 }
@@ -538,17 +538,21 @@ BASE=http://localhost:3000/api
 # 1. Đăng nhập admin → lấy token
 curl -s -X POST $BASE/auth/login -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"ChangeMe123!"}'
-# → {"accessToken":"...","user":{...}}   (copy accessToken vào biến)
+# → {"accessToken":"...","refreshToken":"...","user":{...}}   (copy accessToken vào biến)
 TOKEN=<accessToken>
 
 # 2. Xem thông tin bản thân
 curl -s $BASE/auth/me -H "Authorization: Bearer $TOKEN"
 
-# 3. Tự đăng ký (role luôn là EMPLOYEE, dù có gửi role cũng bị từ chối)
-curl -s -X POST $BASE/auth/register -H 'Content-Type: application/json' \
-  -d '{"username":"an","password":"Password123","fullName":"Nguyễn Văn An"}'
+# 3. Làm mới cặp token bằng refresh token
+curl -s -X POST $BASE/auth/refresh-token -H 'Content-Type: application/json' \
+  -d '{"refreshToken":"<refresh-token>"}'
 
-# 4. Admin xem danh sách user
+# 4. ADMIN hoặc MANAGER tạo user
+curl -s -X POST $BASE/users -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"username":"an","password":"Password123","email":"an@example.com","roleCode":"EMPLOYEE","fullname":"Nguyen Van An","dob":"2000-01-01","phone":"0900000000"}'
+
+# 5. Admin/Manager xem danh sách user
 curl -s "$BASE/users?page=1&limit=10" -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -557,10 +561,10 @@ Các trường hợp lỗi cần thấy đúng:
 | Thao tác | Kết quả mong đợi |
 |---|---|
 | `GET /users` không có token | 401 "Thiếu access token" |
-| Đăng nhập sai mật khẩu | 401 "Sai tên đăng nhập hoặc mật khẩu" |
+| Đăng nhập sai mật khẩu | 401 "Wrong username or password" |
 | Đăng nhập bằng `an`, rồi `GET /users` | 403 (EMPLOYEE không được xem danh sách) |
-| `POST /auth/register` kèm `"role":"ADMIN"` | 400 (`forbidNonWhitelisted`) |
-| Đăng ký trùng username | 409 |
+| `POST /auth/refresh-token` với token sai/hết hạn | 401 |
+| `POST /users` thiếu `roleCode`, `dob` hoặc trường bắt buộc | 400 |
 | Tắt `user-service` rồi gọi `/auth/login` | 504 sau `RPC_TIMEOUT_MS` |
 | `PATCH /users/<id của người khác>` bằng token EMPLOYEE | 403 (do user-service) |
 
@@ -577,7 +581,7 @@ Ví dụ `devices` (sau khi `device-service` đã có contract `DEVICE_CMD`):
 `src/modules/devices/devices.controller.ts`
 
 ```ts
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { DEVICE_CMD, CreateDeviceDto, FindDevicesQueryDto, JwtPayload, Role } from '@app/shared';
 import { BusService } from '../../bus/bus.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -599,7 +603,7 @@ export class DevicesController {
   }
 
   @Patch(':id/report-broken')
-  reportBroken(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() actor: JwtPayload) {
+  reportBroken(@Param('id', ParseIntPipe) id: number, @CurrentUser() actor: JwtPayload) {
     return this.bus.send(DEVICE_CMD.REPORT_BROKEN, { id, actor });
   }
 }

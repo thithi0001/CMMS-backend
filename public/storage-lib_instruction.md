@@ -188,7 +188,7 @@ export * from './storage.types';
 
 Rồi thêm vào `libs/shared/src/index.ts`: `export * from './contracts/storage';`
 
-Mỗi service dùng file sẽ định nghĩa kiểu ticket riêng, kế thừa `UploadTicket` và thêm id của đối tượng (ví dụ `DeviceImageUploadTicket extends UploadTicket { imageId: string }`).
+Mỗi service dùng file sẽ định nghĩa kiểu ticket riêng, kế thừa `UploadTicket` và thêm id của đối tượng (ví dụ `DeviceImageUploadTicket extends UploadTicket { imageId: number }` cho các bảng hiện dùng khóa `Int`).
 
 ---
 
@@ -490,36 +490,37 @@ Mỗi service có file làm đúng **bốn việc**, mọi thứ còn lại là 
 
 Cộng thêm hai việc bảo trì: **dọn bản ghi `UPLOADING` quá hạn** (mục 6.5) và **xóa file khi xóa đối tượng cha**.
 
-Schema của bảng file trong mỗi service gồm (đặt tên tùy ngữ cảnh): `id`, khóa tới đối tượng cha, `objectKey` (unique), `fileName`, `mimeType`, `sizeBytes`, `status` (`UPLOADING`/`READY`), `uploadedBy`, `createdAt`.
+Schema của bảng file trong mỗi service gồm (đặt tên tùy ngữ cảnh): `id`, khóa tới đối tượng cha, `object_key` (unique), `file_name`, `mime_type`, `size_bytes`, `status` (`UPLOADING`/`READY`), `uploaded_by`, `created_at`.
 
 ---
 
 ## 6. Ví dụ đầy đủ: `device-service` lưu và hiển thị ảnh thiết bị
 
-### 6.1 Schema (điều chỉnh theo schema `Device` thật)
+### 6.1 Schema (theo quy ước DB hiện tại; điều chỉnh relation theo schema thiết bị thật)
+
+Các schema đã pull trong dự án dùng tên model/bảng chữ thường số nhiều, field snake_case và khóa `Int`. Ví dụ giả định model `devices` cũng theo quy ước đó.
 
 ```prisma
-enum ImageStatus {
+enum image_status {
   UPLOADING
   READY
 }
 
-model DeviceImage {
-  id         String      @id @default(uuid())
-  deviceId   String      @map("device_id")
-  objectKey  String      @unique @map("object_key")
-  fileName   String      @map("file_name")
-  mimeType   String      @map("mime_type")
-  sizeBytes  Int         @map("size_bytes")
-  status     ImageStatus @default(UPLOADING)
-  isPrimary  Boolean     @default(false) @map("is_primary")
-  uploadedBy String      @map("uploaded_by")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  device     Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+model device_images {
+  id          Int         @id @default(autoincrement())
+  device_id   Int
+  object_key  String      @unique
+  file_name   String
+  mime_type   String
+  size_bytes  Int
+  status      image_status @default(UPLOADING)
+  is_primary  Boolean     @default(false)
+  uploaded_by Int
+  created_at  DateTime    @default(now())
+  devices     devices     @relation(fields: [device_id], references: [id], onDelete: Cascade)
 
-  @@index([deviceId])
-  @@index([status, createdAt])
-  @@map("device_images")
+  @@index([device_id])
+  @@index([status, created_at])
 }
 ```
 
@@ -534,15 +535,15 @@ CONFIRM_IMAGE_UPLOAD: 'cmd.device.confirm_image_upload',
 REMOVE_IMAGE: 'cmd.device.remove_image',
 
 // device.messages.ts
-import { RequestUploadDto } from '../storage/storage.dto';
-export interface RequestDeviceImageUploadMsg { deviceId: string; dto: RequestUploadDto; actor: JwtPayload }
-export interface ConfirmDeviceImageMsg { deviceId: string; imageId: string; actor: JwtPayload }
-export interface RemoveDeviceImageMsg { deviceId: string; imageId: string; actor: JwtPayload }
+import { RequestUploadDto } from '../storage';
+export interface RequestDeviceImageUploadMsg { deviceId: number; dto: RequestUploadDto; actor: JwtPayload }
+export interface ConfirmDeviceImageMsg { deviceId: number; imageId: number; actor: JwtPayload }
+export interface RemoveDeviceImageMsg { deviceId: number; imageId: number; actor: JwtPayload }
 
 // device.types.ts
-import { DownloadUrl, UploadTicket } from '../storage/storage.types';
-export interface DeviceImageView extends DownloadUrl { id: string; isPrimary: boolean }   // url + expiresAt + fileName + mimeType
-export interface DeviceImageUploadTicket extends UploadTicket { imageId: string }
+import { DownloadUrl, UploadTicket } from '../storage';
+export interface DeviceImageView extends DownloadUrl { id: number; isPrimary: boolean }   // url + expiresAt + fileName + mimeType
+export interface DeviceImageUploadTicket extends UploadTicket { imageId: number }
 // và thêm vào DeviceView:
 images: DeviceImageView[];
 ```
@@ -561,7 +562,7 @@ async requestImageUpload({ deviceId, dto, actor }: RequestDeviceImageUploadMsg):
   await this.assertDeviceExists(deviceId); // 404 nếu không có
 
   // Đếm cả ảnh đang UPLOADING để không vượt giới hạn bằng cách xin nhiều URL
-  const count = await this.prisma.deviceImage.count({ where: { deviceId } });
+  const count = await this.prisma.device_images.count({ where: { device_id: deviceId } });
   if (count >= MAX_IMAGES_PER_DEVICE) {
     throw new BadRequestException(`Mỗi thiết bị tối đa ${MAX_IMAGES_PER_DEVICE} ảnh`);
   }
@@ -572,10 +573,10 @@ async requestImageUpload({ deviceId, dto, actor }: RequestDeviceImageUploadMsg):
     mimeType: dto.mimeType,
     sizeBytes: dto.sizeBytes,
   });
-  const image = await this.prisma.deviceImage.create({
+  const image = await this.prisma.device_images.create({
     data: {
-      deviceId, objectKey, fileName: dto.fileName, mimeType: dto.mimeType,
-      sizeBytes: dto.sizeBytes, uploadedBy: actor.sub,
+      device_id: deviceId, object_key: objectKey, file_name: dto.fileName, mime_type: dto.mimeType,
+      size_bytes: dto.sizeBytes, uploaded_by: actor.sub,
     },
   });
   return { imageId: image.id, ...ticket };
@@ -588,45 +589,45 @@ async confirmImageUpload({ deviceId, imageId }: ConfirmDeviceImageMsg): Promise<
   let sizeBytes: number;
   try {
     ({ sizeBytes } = await this.storage.verifyUpload({
-      objectKey: image.objectKey,
+      objectKey: image.object_key,
       purpose: FILE_PURPOSES.DEVICE_IMAGE,
-      mimeType: image.mimeType,
+      mimeType: image.mime_type,
     }));
   } catch (e) {
     // File không hợp lệ đã bị xóa khỏi bucket: xóa luôn bản ghi
     if (e instanceof UploadRejectedException) {
-      await this.prisma.deviceImage.delete({ where: { id: imageId } }).catch(() => undefined);
+      await this.prisma.device_images.delete({ where: { id: imageId } }).catch(() => undefined);
     }
     throw e;
   }
 
   // Ảnh READY đầu tiên tự thành ảnh đại diện
-  const readyCount = await this.prisma.deviceImage.count({ where: { deviceId, status: 'READY' } });
-  const updated = await this.prisma.deviceImage.update({
+  const readyCount = await this.prisma.device_images.count({ where: { device_id: deviceId, status: 'READY' } });
+  const updated = await this.prisma.device_images.update({
     where: { id: imageId },
-    data: { status: 'READY', sizeBytes, isPrimary: readyCount === 0 },
+    data: { status: 'READY', size_bytes: sizeBytes, is_primary: readyCount === 0 },
   });
   return this.toImageView(updated);
 }
 
 async removeImage({ deviceId, imageId }: RemoveDeviceImageMsg) {
   const image = await this.findImageOrFail(deviceId, imageId);
-  await this.storage.deleteObject(image.objectKey);          // object trước, bản ghi sau
-  await this.prisma.deviceImage.delete({ where: { id: imageId } });
+  await this.storage.deleteObject(image.object_key);          // object trước, bản ghi sau
+  await this.prisma.device_images.delete({ where: { id: imageId } });
   return { message: 'Đã gỡ ảnh' };
 }
 
 /** Dùng khi dựng DeviceView: chỉ lấy ảnh READY. Tạo URL là phép tính cục bộ, không gọi mạng. */
-private async toImageView(image: DeviceImage): Promise<DeviceImageView> {
-  const dl = await this.storage.createDownloadUrl(image.objectKey, {
-    fileName: image.fileName,
-    mimeType: image.mimeType,
+private async toImageView(image: device_images): Promise<DeviceImageView> {
+  const dl = await this.storage.createDownloadUrl(image.object_key, {
+    fileName: image.file_name,
+    mimeType: image.mime_type,
   });
-  return { id: image.id, isPrimary: image.isPrimary, ...dl };
+  return { id: image.id, isPrimary: image.is_primary, ...dl };
 }
 
-private async findImageOrFail(deviceId: string, imageId: string) {
-  const image = await this.prisma.deviceImage.findFirst({ where: { id: imageId, deviceId } });
+private async findImageOrFail(deviceId: number, imageId: number) {
+  const image = await this.prisma.device_images.findFirst({ where: { id: imageId, device_id: deviceId } });
   if (!image) throw new NotFoundException('Không tìm thấy ảnh');
   return image;
 }
@@ -635,10 +636,10 @@ private async findImageOrFail(deviceId: string, imageId: string) {
 **Xóa thiết bị:** xóa object của các ảnh trước, rồi xóa thiết bị (bản ghi ảnh mất theo `onDelete: Cascade`):
 
 ```ts
-async deleteDevice(id: string) {
-  const images = await this.prisma.deviceImage.findMany({ where: { deviceId: id }, select: { objectKey: true } });
-  await Promise.all(images.map((i) => this.storage.deleteObject(i.objectKey))); // lỗi thì dừng, thiết bị còn nguyên
-  await this.prisma.device.delete({ where: { id } });
+async deleteDevice(id: number) {
+  const images = await this.prisma.device_images.findMany({ where: { device_id: id }, select: { object_key: true } });
+  await Promise.all(images.map((i) => this.storage.deleteObject(i.object_key))); // lỗi thì dừng, thiết bị còn nguyên
+  await this.prisma.devices.delete({ where: { id } });
 }
 ```
 
@@ -662,9 +663,11 @@ removeImage(@Payload() msg: RemoveDeviceImageMsg) { return this.devices.removeIm
 Gateway (`devices.controller.ts`):
 
 ```ts
+import { ParseIntPipe } from '@nestjs/common';
+
 @Roles(Role.ADMIN, Role.MANAGER, Role.TECHNICIAN)
 @Post(':id/images/upload-url')
-requestImageUpload(@Param('id') deviceId: string, @Body() dto: RequestUploadDto, @CurrentUser() actor: JwtPayload) {
+requestImageUpload(@Param('id', ParseIntPipe) deviceId: number, @Body() dto: RequestUploadDto, @CurrentUser() actor: JwtPayload) {
   return this.bus.send<DeviceImageUploadTicket, RequestDeviceImageUploadMsg>(
     DEVICE_CMD.REQUEST_IMAGE_UPLOAD, { deviceId, dto, actor });
 }
@@ -672,14 +675,14 @@ requestImageUpload(@Param('id') deviceId: string, @Body() dto: RequestUploadDto,
 @Roles(Role.ADMIN, Role.MANAGER, Role.TECHNICIAN)
 @HttpCode(200)
 @Post(':id/images/:imageId/confirm')
-confirmImageUpload(@Param('id') deviceId: string, @Param('imageId', ParseUUIDPipe) imageId: string, @CurrentUser() actor: JwtPayload) {
+confirmImageUpload(@Param('id', ParseIntPipe) deviceId: number, @Param('imageId', ParseIntPipe) imageId: number, @CurrentUser() actor: JwtPayload) {
   return this.bus.send<DeviceImageView, ConfirmDeviceImageMsg>(
     DEVICE_CMD.CONFIRM_IMAGE_UPLOAD, { deviceId, imageId, actor });
 }
 
 @Roles(Role.ADMIN, Role.MANAGER)
 @Delete(':id/images/:imageId')
-removeImage(@Param('id') deviceId: string, @Param('imageId', ParseUUIDPipe) imageId: string, @CurrentUser() actor: JwtPayload) {
+removeImage(@Param('id', ParseIntPipe) deviceId: number, @Param('imageId', ParseIntPipe) imageId: number, @CurrentUser() actor: JwtPayload) {
   return this.bus.send<{ message: string }, RemoveDeviceImageMsg>(
     DEVICE_CMD.REMOVE_IMAGE, { deviceId, imageId, actor });
 }
@@ -714,14 +717,14 @@ export class ImageCleanupService implements OnApplicationBootstrap, OnModuleDest
   }
 
   async run() {
-    const stale = await this.prisma.deviceImage.findMany({
-      where: { status: 'UPLOADING', createdAt: { lt: new Date(Date.now() - PENDING_TTL_MS) } },
+    const stale = await this.prisma.device_images.findMany({
+      where: { status: 'UPLOADING', created_at: { lt: new Date(Date.now() - PENDING_TTL_MS) } },
       take: 100,
     });
     for (const img of stale) {
       try {
-        await this.storage.deleteObject(img.objectKey);               // object trước, bản ghi sau
-        await this.prisma.deviceImage.delete({ where: { id: img.id } });
+        await this.storage.deleteObject(img.object_key);               // object trước, bản ghi sau
+        await this.prisma.device_images.delete({ where: { id: img.id } });
       } catch (e) {
         this.logger.warn(`Dọn ảnh ${img.id} thất bại: ${(e as Error).message}`);
       }
@@ -737,7 +740,7 @@ Khai báo trong module của service. `ai-assistant-service` có đoạn tương
 
 ```ts
 // Upload: xin URL → PUT thẳng lên bucket → confirm
-async function uploadDeviceImage(deviceId: string, file: File) {
+async function uploadDeviceImage(deviceId: number, file: File) {
   const ticket = await api.post(`/devices/${deviceId}/images/upload-url`, {
     fileName: file.name,
     mimeType: file.type,

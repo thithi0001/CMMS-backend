@@ -290,7 +290,8 @@ Hai trường `eventId`/`correlationId` gần như không tốn gì nhưng giúp
 - Mỗi service (trừ gateway, report) có `prisma/schema.prisma`, `prisma.config.ts`, `migrations/` **trong thư mục service**.
 - Client sinh ra ngay trong `src/prisma/generated/` của service đó, nên service khác không có `PrismaClient` của nó để import.
 - Neon: một project, nhiều database: `user_db`, `device_db`, `maintenance_db`, `inventory_db`, `notification_db`, `ai_assistant_db`, `audit_db` (kiểm tra giới hạn gói Neon bạn dùng).
-- Mỗi service có hai biến: `DATABASE_URL` (pooled, host có `-pooler`, dùng lúc chạy) và `DIRECT_URL` (không pooled, dùng cho `prisma migrate`).
+- Các Prisma config hiện tại của `user-service`, `maintenance-service` và `inventory-service` đọc `DATABASE_URL` (không dùng `DIRECT_URL`).
+- Các schema đã pull giữ nguyên tên database: model như `users`, `roles`, `tasks`, `items`; các cột như `hashed_password`, `role_id`, `created_at` giữ snake_case. ID/FK hiện là `Int`; không đổi thành UUID/String hay tự đổi tên model/field để camelCase.
 - Migration chạy từ máy dev trỏ thẳng vào Neon (`prisma migrate dev` / `prisma migrate deploy`), **không** chạy trong container khi khởi động.
 - Sau khi `git clone`, mỗi service cần chạy `prisma generate` (Dockerfile tự làm).
 
@@ -339,13 +340,11 @@ JWT_SECRET=change-me
 Mẫu `apps/<db-service>/.env.example`:
 
 ```env
-# Pooled (host có -pooler) – dùng lúc chạy
+# URL kết nối dùng lúc chạy và cho Prisma CLI
 DATABASE_URL=postgresql://<user>:<pass>@<host>-pooler.<region>.aws.neon.tech/<db_name>?sslmode=require
-# Direct – dùng cho prisma migrate
-DIRECT_URL=postgresql://<user>:<pass>@<host>.<region>.aws.neon.tech/<db_name>?sslmode=require
 ```
 
-Biến riêng: `api-gateway` (`PORT`, `CORS_ORIGIN`, `RPC_TIMEOUT_MS`), `user-service` (`JWT_EXPIRES_IN`, `ADMIN_*`), `ai-assistant-service` (`GEMINI_API_KEY`, `GEMINI_CHAT_MODEL`, `GEMINI_EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS`, `MAX_UPLOAD_MB`).
+Biến riêng: `api-gateway` (`PORT`, `CORS_ORIGIN`, `RPC_TIMEOUT_MS`), `user-service` (`JWT_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`), `ai-assistant-service` (`GEMINI_API_KEY`, `GEMINI_CHAT_MODEL`, `GEMINI_EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS`, `MAX_UPLOAD_MB`).
 
 Lưu ý: vì `JWT_SECRET` nằm ở `.env` gốc nên mọi container đều nhận được nó. Với dự án này chấp nhận được; nếu muốn chặt hơn thì chép vào `.env` của hai app cần dùng (phải giống hệt nhau).
 
@@ -365,9 +364,9 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 ARG APP
-# Chỉ generate Prisma client nếu app có schema. DIRECT_URL giả chỉ để config nạp được lúc build.
+# Chỉ generate Prisma client nếu app có schema. DATABASE_URL giả chỉ để config nạp được lúc build.
 RUN if [ -f apps/$APP/prisma/schema.prisma ]; then \
-      DIRECT_URL="postgresql://build:build@localhost:5432/build" \
+      DATABASE_URL="postgresql://build:build@localhost:5432/build" \
       npx prisma generate --config apps/$APP/prisma.config.ts; \
     fi
 RUN npx nest build $APP
@@ -585,7 +584,7 @@ export interface EventEnvelope<T = unknown> {
   type: string;
   source: string;
   occurredAt: string;
-  actorId?: string;
+  actorId?: number;
   data: T;
 }
 
@@ -593,7 +592,7 @@ export function buildEvent<T>(params: {
   type: string;
   source: string;
   data: T;
-  actorId?: string;
+  actorId?: number;
   correlationId?: string;
 }): EventEnvelope<T> {
   return {
@@ -642,7 +641,7 @@ export class RpcErrorFilter implements RpcExceptionFilter {
 `libs/shared/src/types/role.ts`
 
 ```ts
-// Giữ đồng bộ với enum Role trong prisma/schema.prisma của user-service.
+// Các giá trị này tương ứng với roles.code trong user_db (không phải enum Prisma).
 export const Role = {
   ADMIN: 'ADMIN',
   MANAGER: 'MANAGER',
@@ -658,9 +657,12 @@ export type Role = (typeof Role)[keyof typeof Role];
 import { Role } from './role';
 
 export interface JwtPayload {
-  sub: string;       // userId
+  sub: number;       // users.id
   username: string;
-  role: Role;
+  roleId: number;
+  roleCode: Role;
+  employeeId: number;
+  tokenType?: 'access' | 'refresh';
   iat?: number;
   exp?: number;
 }
