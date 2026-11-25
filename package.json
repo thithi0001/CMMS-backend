@@ -18,14 +18,22 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/api-gateway/test/jest-e2e.json",
+    
     "prisma:pull:user": "prisma db pull --config apps/user-service/prisma.config.ts",
     "prisma:generate:user": "prisma generate --config apps/user-service/prisma.config.ts",
     "prisma:studio:user": "prisma studio --config apps/user-service/prisma.config.ts",
     "start:user": "nest start user-service --watch",
+    
     "prisma:pull:maintenance": "prisma db pull --config apps/maintenance-service/prisma.config.ts",
     "prisma:generate:maintenance": "prisma generate --config apps/maintenance-service/prisma.config.ts",
     "prisma:studio:maintenance": "prisma studio --config apps/maintenance-service/prisma.config.ts",
-    "start:maintenance": "nest start maintenance-service --watch"
+    "start:maintenance": "nest start maintenance-service --watch",
+  
+    "prisma:pull:inventory": "prisma db pull --config apps/inventory-service/prisma.config.ts",
+    "prisma:generate:inventory": "prisma generate --config apps/inventory-service/prisma.config.ts",
+    "prisma:studio:inventory": "prisma studio --config apps/inventory-service/prisma.config.ts",
+    "start:inventory": "nest start inventory-service --watch"
+  
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1177.0",

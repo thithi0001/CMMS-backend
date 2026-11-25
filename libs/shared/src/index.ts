@@ -12,7 +12,7 @@ export * from './ultilies';
 export * from './contracts/user';
 // export * from './contracts/device';
 export * from './contracts/maintenance';
-// export * from './contracts/inventory';
+export * from './contracts/inventory';
 // export * from './contracts/notification';
 // export * from './contracts/report';
 // export * from './contracts/ai-assistant';
