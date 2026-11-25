@@ -45,11 +45,8 @@ export class UsersService {
     }
 
     async resolveRole(roleCode: Role) {
-        const role = await this.prisma.roles.findUnique({
-            where: { code: roleCode },
-        });
-        if (!role)
-            throw new NotFoundException('Role not found');
+        const role = await this.prisma.roles.findUnique({ where: { code: roleCode }});
+        if (!role) throw new NotFoundException('Role not found');
         return role;
     }
 
@@ -66,9 +63,8 @@ export class UsersService {
         const role = await this.resolveRole(dto.roleCode);
 
         if (await this.prisma.users.findUnique({ where: { username }})) {
-            throw new ConflictException('Username exsisted');
+            throw new ConflictException('Username existed');
         }
-
         if (await this.prisma.users.findUnique({ where: { email }})) {
             throw new ConflictException('Email has been used');
         }
@@ -130,14 +126,12 @@ export class UsersService {
 
     async findById(id: number): Promise<UserView> {
         const user = await this.findUserById(id);
-        if (!user)
-            throw new NotFoundException('User not found');
+        if (!user) throw new NotFoundException('User not found');
         return toUserView(user);
     }
 
     async update({ id, data, actor }: UpdateUserMsg): Promise<UserView> {
         const user = await this.findById(id);
-
         if (actor.sub !== user.id)
             throw new ForbiddenException("You can only update your data");
 
@@ -146,23 +140,19 @@ export class UsersService {
             phone: data.phone,
             dob: myParseDate(data.dob, 'dob'),
         };
-
         const changedFields = Object.entries(patch)
             .filter(([,v]) => v !== undefined)
             .map(([k]) => k);
-
-        if (!changedFields.length)
-            return user;
+        if (!changedFields.length) return user;
 
         const updated = await this.prisma.users.update({
             where: { id: user.id },
             data: patch,
             include: { roles: true },
         });
-
-        this.events.updated(id, changedFields, actor.sub);
-        return toUserView(updated);
-
+        const view = toUserView(updated);
+        this.events.updated(view, changedFields, actor.sub);
+        return view;
     }
 
     async updateRole({ id, roleCode, actor }: UpdateRoleMsg): Promise<UserView> {
@@ -172,8 +162,7 @@ export class UsersService {
             throw new ForbiddenException('Cannot change your own role');
 
         const current = await this.findUserById(id);
-        if (!current)
-            throw new NotFoundException('User not found');
+        if (!current) throw new NotFoundException('User not found');
         const role = await this.resolveRole(roleCode);
 
         const user = await this.prisma.users.update({
@@ -182,9 +171,10 @@ export class UsersService {
             include: { roles: true },
         });
 
+        const view = toUserView(user);
         if (current.role_id !== role.id)
-            this.events.roleChanged(id, current.roles.code, role.code, actor.sub);
-        return toUserView(user);
+            this.events.roleChanged(view, current.roles.code, role.code, actor.sub);
+        return view;
     }
 
     async deactivate({ id, actor }: DeactivateUserMsg): Promise<UserView> {

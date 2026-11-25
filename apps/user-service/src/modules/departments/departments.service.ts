@@ -18,13 +18,6 @@ export class DepartmentsService {
         private readonly events: DepartmentEventsPublisher,
     ) {}
 
-    // === Nội bộ ===
-    findDepartmentById(id: number) {
-        return this.prisma.departments.findUnique({
-            where: { id },
-        });
-    }
-
     async createDepartment(dto: CreateDepartmentDto): Promise<DepartmentView> {
         if (await this.prisma.departments.findUnique({ where: { code: dto.code } })) {
             throw new ConflictException('Department code already exists');
@@ -48,7 +41,7 @@ export class DepartmentsService {
     }
 
     async findById(id: number): Promise<DepartmentView> {
-        const department = await this.findDepartmentById(id);
+        const department = await this.prisma.departments.findUnique({ where: { id }});
         if (!department) {
             throw new NotFoundException('Department not found');
         }
@@ -56,10 +49,7 @@ export class DepartmentsService {
     }
 
     async findAll(q: FindDepartmentQueryDto): Promise<Paginated<DepartmentView>> {
-        const { 
-            page = 1, 
-            limit = 20,
-        } = q;
+        const { page = 1, limit = 20 } = q;
         const where: Prisma.departmentsWhereInput = {
             ...(q.search && {
                 OR: [
