@@ -264,7 +264,7 @@ interface EventEnvelope<T> {
   type: string;           // = routing key, ví dụ 'evt.device.broken'
   source: string;         // 'device-service'
   occurredAt: string;     // ISO
-  actorId?: string;       // ai gây ra hành động (audit cần)
+  actorId?: number;       // ID số của người thực hiện (audit cần)
   data: T;                // payload nghiệp vụ
 }
 ```
