@@ -18,6 +18,9 @@ export const ITEM_CMD = {
     FIND_ALL: 'cmd.item.find_all',
     FIND_BY_ID: 'cmd.item.find_by_id',
     UPDATE_STOCK: 'cmd.item.update_stock',
+    REQUEST_IMAGE_UPLOAD: 'cmd.item.request_image_upload',
+    CONFIRM_IMAGE_UPLOAD: 'cmd.item.confirm_image_upload',
+    REMOVE_IMAGE: 'cmd.item.remove_image',
 } as const;
 
 export const ITEM_EVT = {

@@ -1,3 +1,13 @@
+import type { DownloadUrl, UploadTicket } from '../storage';
+
+export interface ItemImageView extends DownloadUrl {
+    id: number;
+}
+
+export interface ItemImageUploadTicket extends UploadTicket {
+    imageId: number;
+}
+
 export interface InventorySourceView {
     id: number;
     name: string;
@@ -26,7 +36,7 @@ export interface ItemView {
     stock: number;
     minimum: number;
     isLow: boolean;
-    imgUrl?: string | null;
+    images: ItemImageView[];
     createdAt?: string;
     updatedAt?: string;
 }

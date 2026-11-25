@@ -19,6 +19,7 @@ type ItemWithRelations = Prisma.itemsGetPayload<{
     include: {
         sources_items_manufacturer_idTosources: true,
         sources_items_supplier_idTosources: true,
+        item_images: true,
     };
 }>;
 export function toItemView(item: ItemWithRelations): ItemView {
@@ -41,7 +42,7 @@ export function toItemView(item: ItemWithRelations): ItemView {
         stock: item.stock,
         minimum: item.minimum_stock,
         isLow: (item.stock <= item.minimum_stock),
-        imgUrl: item.img_url,
+        images: [],
         createdAt: item.created_at?.toISOString(),
         updatedAt: item.updated_at?.toISOString(),
     };

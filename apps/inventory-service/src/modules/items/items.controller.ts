@@ -1,7 +1,13 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ITEM_CMD, FindItemQueryDto } from '@app/shared';
-import type { CreateItemMsg, UpdateItemMsg } from '@app/shared';
+import type {
+    ConfirmItemImageMsg,
+    CreateItemMsg,
+    RemoveItemImageMsg,
+    RequestItemImageUploadMsg,
+    UpdateItemMsg,
+} from '@app/shared';
 import { ItemsService } from './items.service';
 
 @Controller()
@@ -26,5 +32,20 @@ export class ItemsController {
     @MessagePattern(ITEM_CMD.FIND_BY_ID)
     findById(@Payload() id: number) {
         return this.items.findById(id);
+    }
+
+    @MessagePattern(ITEM_CMD.REQUEST_IMAGE_UPLOAD)
+    requestImageUpload(@Payload() msg: RequestItemImageUploadMsg) {
+        return this.items.requestImageUpload(msg);
+    }
+
+    @MessagePattern(ITEM_CMD.CONFIRM_IMAGE_UPLOAD)
+    confirmImageUpload(@Payload() msg: ConfirmItemImageMsg) {
+        return this.items.confirmImageUpload(msg);
+    }
+
+    @MessagePattern(ITEM_CMD.REMOVE_IMAGE)
+    removeImage(@Payload() msg: RemoveItemImageMsg) {
+        return this.items.removeImage(msg);
     }
 }

@@ -36,10 +36,10 @@ model items {
   description                            String?
   stock                                  Int             @default(0)
   minimum_stock                          Int             @default(0)
-  img_url                                String?
   created_at                             DateTime?       @default(now()) @db.Timestamptz(6)
   updated_at                             DateTime?       @default(now()) @db.Timestamptz(6)
   batches                                batches[]
+  item_images                            item_images[]
   sources_items_manufacturer_idTosources sources         @relation("items_manufacturer_idTosources", fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sources_items_supplier_idTosources     sources         @relation("items_supplier_idTosources", fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   require_items                          require_items[]
@@ -121,6 +121,22 @@ model usage_item_lists {
   @@index([task_id], map: "idx_usage_item_lists_task_id")
 }
 
+model item_images {
+  id          Int          @id @default(autoincrement())
+  item_id     Int
+  object_key  String       @unique(map: "uq_item_images_object_key") @db.VarChar(512)
+  file_name   String       @db.VarChar(255)
+  mime_type   String       @db.VarChar(100)
+  size_bytes  BigInt       @default(0)
+  status      image_status @default(uploading)
+  uploaded_by Int
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  items       items        @relation(fields: [item_id], references: [id], onDelete: Cascade, map: "fk_item_images_item")
+
+  @@index([item_id, status], map: "idx_item_images_item_status")
+  @@index([status, created_at], map: "idx_item_images_status_created")
+}
+
 enum event_status {
   pending
   published
@@ -129,4 +145,9 @@ enum event_status {
 enum source_type {
   manufacturer
   supplier
+}
+
+enum image_status {
+  uploading
+  ready
 }

@@ -8,6 +8,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
     BusModule,
     AuthModule,
     UsersModule,
-    MaintenanceModule
+    MaintenanceModule,
+    InventoryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

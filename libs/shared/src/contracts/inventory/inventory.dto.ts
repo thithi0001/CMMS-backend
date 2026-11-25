@@ -35,7 +35,6 @@ export class CreateItemDto {
     @IsNotEmpty() @IsString() unit!: string;
     @IsString() description?: string;
     @IsInt() @Min(1) minimum!: number;
-    @IsNotEmpty() @IsString() imgUrl?: string;
 }
 
 export class UpdateItemDto {
@@ -44,7 +43,6 @@ export class UpdateItemDto {
     @IsOptional() @IsString() unit?: string;
     @IsOptional() @IsString() description?: string;
     @IsOptional() @IsInt() @Min(1) minimum?: number;
-    @IsOptional() @IsString() imgUrl?: string;
 }
 
 export class FindItemQueryDto extends FindQueryDto {

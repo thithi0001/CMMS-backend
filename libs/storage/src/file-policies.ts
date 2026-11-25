@@ -1,6 +1,7 @@
 export const FILE_PURPOSES = {
   AI_DOCUMENT: 'ai-document',
   DEVICE_IMAGE: 'device-image',
+  ITEM_IMAGE: 'item-image',
   TICKET_IMAGE: 'ticket-image',
   USER_AVATAR: 'user-avatar',
 } as const;
@@ -24,6 +25,7 @@ export const STORAGE_POLICIES: Record<FilePurpose, FilePolicy> = {
     maxBytes: 20 * MB,
   },
   'device-image': { allowedMime: IMAGE_MIME, maxBytes: 5 * MB },
+  'item-image': { allowedMime: IMAGE_MIME, maxBytes: 5 * MB },
   'ticket-image': { allowedMime: IMAGE_MIME, maxBytes: 5 * MB },
   'user-avatar': { allowedMime: IMAGE_MIME, maxBytes: 2 * MB },
 };
