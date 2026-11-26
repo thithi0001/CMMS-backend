@@ -19,6 +19,7 @@ import {
     UpdateDeviceSourceDto, 
 } from './device.dto';
 import { DeviceState } from "./device.enums";
+import { RequestUploadDto } from "../storage";
 
 // === CATEGORIES ===
 export interface CreateCategoryMsg { dto: CreateCategoryDto, actor: JwtPayload }
@@ -26,13 +27,17 @@ export interface UpdateCategoryMsg { id: number, data: UpdateCategoryDto, actor:
 export interface DeleteCategoryMsg { id: number, actor: JwtPayload }
 
 // === SOURCES ===
-export interface CreateSourceMsg { dto: CreateDeviceSourceDto, actor: JwtPayload }
-export interface UpdateSourceMsg { id: number, data: UpdateDeviceSourceDto, actor: JwtPayload }
+export interface CreateDeviceSourceMsg { dto: CreateDeviceSourceDto, actor: JwtPayload }
+export interface UpdateDeviceSourceMsg { id: number, data: UpdateDeviceSourceDto, actor: JwtPayload }
+export interface DeleteDeviceSourceMsg { id: number, actor: JwtPayload }
 
 // === DEVICES ===
 export interface CreateDeviceMsg { dto: CreateDeviceDto, actor: JwtPayload }
 export interface UpdateDeviceMsg { id: number, data: UpdateDeviceDto, actor: JwtPayload }
 export interface ChangeDeviceStateMsg { id: number, newState: DeviceState, actor: JwtPayload }
+export interface RequestDeviceImageUploadMsg { id: number; dto: RequestUploadDto; actor: JwtPayload }
+export interface ConfirmDeviceImageMsg { id: number; imageId: number; actor: JwtPayload }
+export interface RemoveDeviceImageMsg { id: number; imageId: number; actor: JwtPayload }
 
 // === DEVICE ACTIONS ===
 // ASSIGN

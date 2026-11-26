@@ -1,3 +1,4 @@
+import { DownloadUrl, UploadTicket } from "../storage";
 import { DeviceState, IntervalUnit, DeviceSourceType, RequestStatus, HandoverType } from "./device.enums";
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
@@ -20,16 +21,25 @@ export interface CategoryView {
 export interface DeviceSourceView {
     id: number;
     name: string;
+    code: string;
     type: DeviceSourceType;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface DeviceImageView extends DownloadUrl {
+    id: number;
+}
+
+export interface DeviceImageUploadTicket extends UploadTicket {
+    imageId: number;
 }
 
 export interface DeviceView {
     id: number;
     category: { id: number; name: string; };
     manufacturer: { id: number; name: string; };
-    supplier: { id: number; name: string };
+    supplier: { id: number; name: string; };
     code: string;
     model?: string;
     serialNumber?: string;
@@ -38,10 +48,10 @@ export interface DeviceView {
     purchasePrice?: string;
     originalCost?: string;
     specifications?: JsonValue;
-    imgUrl?: string;
     installLocation?: string;
     state: DeviceState;
     lastMaintenanceAt?: string;
+    images: DeviceImageView[];
     createdAt?: string;
     updatedAt?: string;
 }

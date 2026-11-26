@@ -30,10 +30,11 @@ export function toCategoryView(category: categories): CategoryView {
     };
 }
 
-export function toSourceView(source: sources): DeviceSourceView {
+export function toDeviceSourceView(source: sources): DeviceSourceView {
     return {
         id: source.id,
         name: source.name,
+        code: source.code,
         type: source.type as DeviceSourceType,
         createdAt: source.created_at?.toISOString(),
         updatedAt: source.updated_at?.toISOString(),
@@ -45,6 +46,7 @@ type DeviceWithRelations = Prisma.devicesGetPayload<{
         categories: { select: { name: true } };
         sources_devices_manufacturer_idTosources: { select: { name: true } };
         sources_devices_supplier_idTosources: { select: { name: true } };
+        device_images: true,
     };
 }>;
 export function toDeviceView(device: DeviceWithRelations): DeviceView {
@@ -70,10 +72,10 @@ export function toDeviceView(device: DeviceWithRelations): DeviceView {
         purchasePrice: device.purchase_price?.toString(),
         originalCost: device.original_cost?.toString(),
         specifications: device.specifications,
-        imgUrl: device.img_url || undefined,
         installLocation: device.install_location || undefined,
         state: device.state as DeviceState,
         lastMaintenanceAt: device.last_maintenance_at?.toDateString(),
+        images: [],
         createdAt: device.created_at?.toISOString(),
         updatedAt: device.updated_at?.toISOString(),
     };

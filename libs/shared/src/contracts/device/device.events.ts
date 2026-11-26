@@ -2,7 +2,6 @@ import { DeviceState, DeviceSourceType } from "./device.enums";
 
 export interface CategoryEventPayload {
     categoryId: number;
-    categoryName: string;
     categoryCode: string;
 }
 
@@ -13,8 +12,8 @@ export interface CategoryUpdatePayload {
 
 export interface DeviceSourceEventPayload {
     sourceId: number;
-    sourceName: string;
-    sourceType: DeviceSourceType;
+    sourceCode: string;
+    changedFields?: string[];
 }
 
 export interface DeviceEventPayload {

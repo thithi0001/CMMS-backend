@@ -34,11 +34,14 @@ export class FindCategoryQueryDto extends FindQueryDto {
 
 export class CreateDeviceSourceDto {
     @IsNotEmpty() @IsString() name!: string;
+    @IsNotEmpty() @IsString() code!: string;
     @IsIn(Object.values(DeviceSourceType)) type!: DeviceSourceType;
 }
 
 export class UpdateDeviceSourceDto {
     @IsOptional() @IsString() name?: string;
+    @IsOptional() @IsString() code?: string;
+    @IsOptional() @IsIn(Object.values(DeviceSourceType)) type?: DeviceSourceType;
 }
 
 export class FindDeviceSourceQueryDto extends FindQueryDto {
@@ -53,7 +56,6 @@ export class CreateDeviceDto {
     @IsOptional() @IsString() model?: string;
     @IsOptional() @IsString() serialNumber?: string;
     @IsOptional() @IsObject() specifications?: Record<string, string>;
-    @IsOptional() @IsString() imgUrl?: string;
     @IsOptional() @IsString() installLocation?: string;
 
     @IsOptional()
@@ -99,7 +101,6 @@ export class UpdateDeviceDto {
     @IsOptional() @IsString() model?: string;
     @IsOptional() @IsString() serialNumber?: string;
     @IsOptional() @IsObject() specifications?: Record<string, string>;
-    @IsOptional() @IsString() imgUrl?: string;
     @IsOptional() @IsString() installLocation?: string;
 
     @IsOptional()
@@ -138,9 +139,9 @@ export class UpdateDeviceDto {
 }
 
 export class FindDeviceQueryDto extends FindQueryDto {
-    @IsOptional() @IsString() category?: string;
-    @IsOptional() @IsString() manufacturer?: string;
-    @IsOptional() @IsString() supplier?: string;
+    @IsOptional() @IsInt() @Min(1) categoryId?: number;
+    @IsOptional() @IsInt() @Min(1) manufacturerId?: number;
+    @IsOptional() @IsInt() @Min(1) supplierId?: number;
     @IsOptional() @IsIn(Object.values(DeviceState)) state?: DeviceState;
 }
 

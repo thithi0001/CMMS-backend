@@ -32,17 +32,22 @@ export class DeviceSourceEventsPublisher implements OnApplicationBootstrap {
     created(s: DeviceSourceView, actorId: number) {
         this.publish<DeviceSourceEventPayload>(DEVICE_SOURCE_EVT.CREATED, {
             sourceId: s.id,
-            sourceName: s.name,
-            sourceType: s.type
+            sourceCode: s.code,
         }, actorId);
     }
 
-    updated(s: DeviceSourceView, actorId: number) {
+    updated(s: DeviceSourceView, changedFields: string[], actorId: number) {
         this.publish<DeviceSourceEventPayload>(DEVICE_SOURCE_EVT.UPDATED, {
             sourceId: s.id,
-            sourceName: s.name,
-            sourceType: s.type
+            sourceCode: s.code,
+            changedFields
         }, actorId);
     }
 
+    deleted(s: DeviceSourceView, actorId: number) {
+        this.publish<DeviceSourceEventPayload>(DEVICE_SOURCE_EVT.DELETED, {
+            sourceId: s.id,
+            sourceCode: s.code
+        }, actorId);
+    }
 }

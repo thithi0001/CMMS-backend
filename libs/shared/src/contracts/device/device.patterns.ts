@@ -15,6 +15,7 @@ export const CATEGORY_EVT = {
 export const DEVICE_SOURCE_CMD = {
     CREATE: 'cmd.source.create',
     UPDATE: 'cmd.source.update',
+    DELETE: 'cmd.source.delete',
     FIND_ALL: 'cmd.source.find_all',
     FIND_BY_ID: 'cmd.source.find_by_id',
 } as const;
@@ -22,6 +23,7 @@ export const DEVICE_SOURCE_CMD = {
 export const DEVICE_SOURCE_EVT = {
     CREATED: 'evt.source.created',
     UPDATED: 'evt.source.updated',
+    DELETED: 'evt.source.deleted',
 } as const;
 
 export const DEVICE_CMD = {
@@ -30,6 +32,9 @@ export const DEVICE_CMD = {
     FIND_ALL: 'cmd.device.find_all',
     FIND_BY_ID: 'cmd.device.find_by_id',
     STATE_CHANGE: 'cmd.device.state_change',
+    REQUEST_IMAGE_UPLOAD: 'cmd.device.request_image_upload',
+    CONFIRM_IMAGE_UPLOAD: 'cmd.device.confirm_image_upload',
+    REMOVE_IMAGE: 'cmd.device.remove_image',
 } as const;
 
 export const ASSIGN_DEVICE_CMD = {
