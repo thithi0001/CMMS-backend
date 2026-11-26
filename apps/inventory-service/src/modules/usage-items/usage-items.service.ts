@@ -12,6 +12,7 @@ import {
     UsageItemView,
 } from '@app/shared';
 import { UsageItemEventsPublisher } from '../../messaging/publishers/usage-item-events.publisher';
+import { MaintenanceTasksClient } from '../../messaging/clients/maintenance-tasks.client';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toUsageItemView } from '../views.mapper';
@@ -21,6 +22,7 @@ export class UsageItemsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly events: UsageItemEventsPublisher,
+        private readonly tasks: MaintenanceTasksClient,
     ) {}
 
     private readonly usageItemInclude = {
@@ -178,6 +180,8 @@ export class UsageItemsService {
     }
 
     async create({ dto, actor }: CreateUsageItemListMsg): Promise<CreateUsageItemListResult> {
+        await this.tasks.findById(dto.taskId);
+
         const requestedItems = [...dto.requestedItems].sort(
             (a, b) => a.itemId - b.itemId,
         );

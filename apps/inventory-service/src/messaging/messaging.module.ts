@@ -7,6 +7,7 @@ import { ItemEventsPublisher } from './publishers/item-events.publisher';
 import { BatchEventsPublisher } from './publishers/batch-events.publisher';
 import { UsageItemEventsPublisher } from './publishers/usage-item-events.publisher';
 import { RequireItemEventsPublisher } from './publishers/require-item-events.publisher';
+import { MaintenanceTasksClient } from './clients/maintenance-tasks.client';
 
 @Global()
 @Module({
@@ -24,6 +25,7 @@ import { RequireItemEventsPublisher } from './publishers/require-item-events.pub
         BatchEventsPublisher,
         RequireItemEventsPublisher, 
         UsageItemEventsPublisher,
+        MaintenanceTasksClient,
     ],
     exports: [
         InventorySourceEventsPublisher, 
@@ -31,5 +33,6 @@ import { RequireItemEventsPublisher } from './publishers/require-item-events.pub
         BatchEventsPublisher, 
         RequireItemEventsPublisher,
         UsageItemEventsPublisher,
+        MaintenanceTasksClient,
     ],
 }) export class MessagingModule {}
