@@ -24,7 +24,7 @@ export class DeviceEmployeeService {
     async create({ dto, actor }: CreateDeviceEmployeeMsg): Promise<DeviceEmployeeView> {
         const device = await this.devicesService.findById(dto.deviceId);
         if (!isAllowedToChangeState(device.state, DeviceState.IN_USE))
-                    throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
+                    throw new ConflictException(`Cannot change device state from ${device.state} to ${DeviceState.IN_USE}`);
         // 1 thiết bị không thể cùng lúc cấp cho nhiều nhân viên
         const isReturned = !!(await this.prisma.device_employee.findFirst({
             where: {
