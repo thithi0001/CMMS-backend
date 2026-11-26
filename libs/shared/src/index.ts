@@ -1,6 +1,7 @@
 export * from './constants/messaging.constants';
 export * from './messaging/bus-options';
 export * from './messaging/event-envelope';
+export * from './messaging/rpc-request';
 export * from './exceptions/rpc-error.filter';
 export * from './types/role';
 export * from './types/jwt-payload';

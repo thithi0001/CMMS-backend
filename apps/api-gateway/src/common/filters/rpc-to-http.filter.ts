@@ -1,4 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
+import { isRpcErrorPayload } from '@app/shared';
 import type { Response } from "express";
 import { TimeoutError } from "rxjs";
 
@@ -13,9 +14,13 @@ export interface ApiErrorResponse {
     };
 }
 
-const isRpcError = (e: unknown): e is { statusCode: number; message: unknown } => 
-    typeof e === 'object' && e !== null && 
-    typeof (e as any).statusCode === 'number';
+function getHttpExceptionMessage(body: string | object, fallback: string): unknown {
+    if (typeof body === 'string') return body;
+    if (body !== null && 'message' in body) {
+        return (body as { message?: unknown }).message ?? fallback;
+    }
+    return fallback;
+}
 
 @Catch()
 export class RpcToHttpFilter implements ExceptionFilter {
@@ -28,13 +33,14 @@ export class RpcToHttpFilter implements ExceptionFilter {
 
         if (exception instanceof HttpException) {
             status = exception.getStatus();
-            const body = exception.getResponse();
-            message = typeof body === 'string' ? body 
-                : ((body as any).message ?? exception.message);
+            message = getHttpExceptionMessage(
+                exception.getResponse(),
+                exception.message,
+            );
         } else if (exception instanceof TimeoutError) {
             status = HttpStatus.GATEWAY_TIMEOUT;
             message = 'Service not response (timeout)';
-        } else if (isRpcError(exception)) {
+        } else if (isRpcErrorPayload(exception)) {
             status = exception.statusCode;
             message = exception.message;
         } else {

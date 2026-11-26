@@ -1,8 +1,7 @@
 import { Inject, Injectable, OnApplicationBootstrap } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ClientProxy } from "@nestjs/microservices";
-import { firstValueFrom, timeout } from "rxjs";
-import { BUS_CLIENT } from "@app/shared";
+import { BUS_CLIENT, sendRpcRequest } from "@app/shared";
 
 @Injectable()
 export class BusService implements OnApplicationBootstrap {
@@ -20,9 +19,11 @@ export class BusService implements OnApplicationBootstrap {
     }
 
     send<TResult, TInput = unknown>(pattern: string, data: TInput): Promise<TResult> {
-        return firstValueFrom(
-            this.client.send<TResult, TInput>(pattern, data)
-                .pipe(timeout(this.timeoutMs)),
+        return sendRpcRequest<TResult, TInput>(
+            this.client,
+            pattern,
+            data,
+            this.timeoutMs,
         );
     }
 }
