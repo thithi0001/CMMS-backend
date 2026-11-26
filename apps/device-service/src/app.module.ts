@@ -10,6 +10,7 @@ import { RetrieveDevicesModule } from './modules/retrieve-devices/retrieve-devic
 import { HandoverDevicesModule } from './modules/handover-devices/handover-devices.module';
 import { DisposeDevicesModule } from './modules/dispose-devices/dispose-devices.module';
 import { DeviceEmployeeModule } from './modules/device-employee/device-employee.module';
+import { StorageModule } from '@app/storage';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { DeviceEmployeeModule } from './modules/device-employee/device-employee.
             envFilePath: ['apps/device-service/.env', '.env'],
         }),
         PrismaModule,
+        StorageModule,
         MessagingModule,
         CategoriesModule,
         DeviceSourcesModule,

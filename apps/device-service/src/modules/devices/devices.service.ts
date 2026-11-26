@@ -1,86 +1,154 @@
 import {
-    ConflictException, ForbiddenException, Injectable, NotFoundException
+    ConflictException, ForbiddenException, Injectable, NotFoundException,
+    OnModuleDestroy
 } from '@nestjs/common';
 import {
-    CreateDeviceDto, 
     FindDeviceHistoryDto, FindDeviceQueryDto,
     CreateDeviceMsg, UpdateDeviceMsg, ChangeDeviceStateMsg,
     DeviceHistoryView, DeviceView,
     Paginated,
     DeviceSourceType,
+    myParseDate,
+    RequestDeviceImageUploadMsg,
+    DeviceImageUploadTicket,
+    ConfirmDeviceImageMsg,
+    DeviceImageView,
+    RemoveDeviceImageMsg,
 } from '@app/shared';
+import { FILE_PURPOSES, StorageService, UploadRejectedException } from '@app/storage';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { toDeviceHistoryView, toDeviceView } from '../views.mapper';
-import { DeviceSourcesService } from '../sources/sources.service';
 import { CategoriesService } from '../categories/categories.service';
 import { isAllowedToChangeState } from '../device-state-machine';
+import { toDeviceHistoryView, toDeviceView } from '../views.mapper';
 
 @Injectable()
-export class DevicesService {
+export class DevicesService implements OnModuleDestroy {
+    private readonly cleanupInterval: ReturnType<typeof setInterval>;
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly categoriesService: CategoriesService,
-        private readonly sourcesService: DeviceSourcesService,
         private readonly events: DeviceEventsPublisher,
-    ) {}
+        private readonly storage: StorageService,
+    ) {
+        this.cleanupInterval = setInterval(
+            () => void this.cleanupUploadingImages(),
+            30 * 60 * 1000,
+        );
+    }
 
-    // === Nội bộ ===
-    include = {
+    private readonly deviceInclude = {
         categories: { select: { name: true } },
         sources_devices_manufacturer_idTosources: { select: { name: true } },
         sources_devices_supplier_idTosources: { select: { name: true } },
-    };
-    
-    findDeviceById(id: number) {
-        return this.prisma.devices.findUnique({
-            where: { id },
-            include: this.include,
-        });
+        device_images: {
+            where: { status: 'ready' as const },
+        },
+    } satisfies Prisma.devicesInclude;
+
+    onModuleDestroy() {
+        clearInterval(this.cleanupInterval);
     }
 
-    async createDevice(dto: CreateDeviceDto): Promise<DeviceView> {
-        const category = await this.categoriesService.findById(dto.categoryId);
-        const manufacturer = await this.sourcesService.findById(dto.manufacturerId);
-        if (manufacturer.type !== DeviceSourceType.MANUFACTURER)
-            throw new ConflictException('manufacturerId must identify a manufacturer');
-        const supplier = await this.sourcesService.findById(dto.supplierId);
-        if (supplier.type !== DeviceSourceType.SUPPLIER)
-            throw new ConflictException('supplierId must identify a supplier');
+    private async toImageView(image: {
+        id: number,
+        object_key: string,
+        file_name: string;
+        mime_type: string;
+    }): Promise<DeviceImageView> {
+        const download = await this.storage.createDownloadUrl(image.object_key, {
+            fileName: image.file_name,
+            mimeType: image.mime_type,
+        });;
+        return { id: image.id, ...download };
+    }
+    
+    private async toDeviceView(device: Parameters<typeof toDeviceView>[0]): Promise<DeviceView> {
+        const view = toDeviceView(device);
+        const images = await Promise.all(
+            (device.device_images ?? []).map(image => this.toImageView(image)),
+        );
+        return { ...view, images };
+    }
 
-        const purchasePrice = dto.purchasePrice === undefined ? undefined :
-            new Prisma.Decimal(dto.purchasePrice);
-        const originalCost = dto.originalCost === undefined ? undefined :
-            new Prisma.Decimal(dto.originalCost);
-        
-        const device = await this.prisma.devices.create({
-            data: {
-                category_id: category.id,
-                manufacturer_id: manufacturer.id,
-                supplier_id: supplier.id,
-                code: dto.code,
-                model: dto.model,
-                serial_number: dto.serialNumber,
-                manufacture_date: dto.manufactureDate,
-                purchase_date: dto.purchaseDate,
-                purchase_price: purchasePrice,
-                original_cost: originalCost ? originalCost : purchasePrice,
-                specifications: dto.specifications,
-                img_url: dto.imgUrl,
-                install_location: dto.installLocation,
+    private async cleanupUploadingImages() {
+        const ttlSeconds = Number(process.env.PENDING_UPLOAD_TTL_SECONDS ?? 86400);
+        const threshold = new Date(Date.now() - ttlSeconds * 1000);
+        const images = await this.prisma.device_images.findMany({
+            where: {
+                status: 'uploading',
+                created_at: { lt: threshold },
             },
-            include: this.include,
         });
 
-        return toDeviceView(device);
+        for (const image of images) {
+            await this.storage.deleteObject(image.object_key).catch(() => undefined);
+            await this.prisma.device_images.delete({ where: { id: image.id } }).catch(() => undefined);
+        }
     }
 
     // === RPC ===
     async create({ dto, actor }: CreateDeviceMsg): Promise<DeviceView> {
-        const device = await this.createDevice(dto);
-        this.events.created(device, actor.sub);
-        return device;
+        const device = await this.prisma.$transaction(async tx => {
+            const category = await this.categoriesService.findById(dto.categoryId);
+
+            const sourceIds = [...new Set([
+                dto.manufacturerId,
+                dto.supplierId,
+            ])].sort((a, b) => a - b);
+            for (const sourceId of sourceIds) {
+                await tx.$queryRaw`
+                    SELECT id FROM sources
+                    WHERE id = ${sourceId}
+                    FOR UPDATE
+                `;
+            };
+
+            const sources = await tx.sources.findMany({
+                where: { id: { in: sourceIds }},
+            });
+            const manufacturer = sources.find(
+                source => source.id === dto.manufacturerId,
+            );
+            const supplier = sources.find(
+                source => source.id === dto.supplierId,
+            );
+
+            if (!manufacturer || !supplier)
+                throw new NotFoundException('Manufacturer or Supplier not found');
+            if (manufacturer.type !== DeviceSourceType.MANUFACTURER)
+                throw new ConflictException('manufacturerId must belong to a MANUFACTURER');
+            if (supplier.type !== DeviceSourceType.SUPPLIER)
+                throw new ConflictException('supplierId must belong to a SUPPLIER');
+
+            const purchasePrice = dto.purchasePrice === undefined ? undefined :
+                new Prisma.Decimal(dto.purchasePrice);
+            const originalCost = dto.originalCost === undefined ? undefined :
+                new Prisma.Decimal(dto.originalCost);
+
+            return await tx.devices.create({
+                data: {
+                    category_id: category.id,
+                    manufacturer_id: manufacturer.id,
+                    supplier_id: supplier.id,
+                    code: dto.code,
+                    model: dto.model,
+                    serial_number: dto.serialNumber,
+                    manufacture_date: myParseDate(dto.manufactureDate, 'manufacture date'),
+                    purchase_date: myParseDate(dto.purchaseDate, 'purchase date'),
+                    purchase_price: purchasePrice,
+                    original_cost: originalCost ? originalCost : purchasePrice,
+                    specifications: dto.specifications,
+                    install_location: dto.installLocation,
+                },
+                include: this.deviceInclude,
+            });
+        });
+        const view = await this.toDeviceView(device);
+        this.events.created(view, actor.sub);
+        return view;
     }
 
     async findAll(q: FindDeviceQueryDto): Promise<Paginated<DeviceView>> {
@@ -95,9 +163,9 @@ export class DevicesService {
         };
 
         const where: Prisma.devicesWhereInput = {
-            // category,
-            // manufacturer,
-            // supplier,
+            ...(q.categoryId && { category_id: q.categoryId}),
+            ...(q.manufacturerId && { manufacturer_id: q.manufacturerId}),
+            ...(q.supplierId && { supplier_id: q.supplierId}),
             ...(q.state && { state: q.state }),
             ...(search && {
                 OR: [
@@ -118,98 +186,149 @@ export class DevicesService {
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { code: 'asc' },
-                include: this.include,
+                include: this.deviceInclude,
             }),
         ]);
         
         return {
-            items: devices.map(toDeviceView),
+            items: await Promise.all(devices.map(device => this.toDeviceView(device))),
             total, page, limit
         };
     }
 
     async findById(id: number): Promise<DeviceView> {
-        const device = await this.findDeviceById(id);
-        if (!device)
-            throw new NotFoundException('Device not found');
-        return toDeviceView(device);
+        const device = await this.prisma.devices.findUnique({
+            where: { id }, include: this.deviceInclude,
+        });
+        if (!device) throw new NotFoundException('Device not found');
+        return this.toDeviceView(device);
     }
     
     async update({ id, data, actor }: UpdateDeviceMsg): Promise<DeviceView> {
-        const device = await this.findById(id);
-        if (data.categoryId)
-            await this.categoriesService.findById(data.categoryId);
-        if (data.manufacturerId)
-            if (DeviceSourceType.MANUFACTURER !==
-                (await this.sourcesService.findById(data.manufacturerId)).type)
-                throw new ConflictException('manufacturerId must identify a manufacturer');
-        if (data.supplierId)
-            if (DeviceSourceType.SUPPLIER !==
-                (await this.sourcesService.findById(data.supplierId)).type)
-                throw new ConflictException('supplierId must identify a supplier');
+        const result = await this.prisma.$transaction(async tx => {
+            const current = await tx.devices.findUnique({
+                where: { id },
+                include: this.deviceInclude,
+            });
+            if (!current) throw new NotFoundException('Device not found');
 
-        const newPurchasePrice = data.purchasePrice === undefined ? undefined :
-            new Prisma.Decimal(data.purchasePrice);
-        const newOriginalCost = data.originalCost === undefined ? undefined :
-            new Prisma.Decimal(data.originalCost);
+            if (data.categoryId !== undefined)
+                await this.categoriesService.findById(data.categoryId);
 
-        const patch = {
-            category_id: data.categoryId,
-            manufacturer_id: data.manufacturerId,
-            supplier_id: data.supplierId,
-            code: data.code,
-            model: data.model,
-            serial_number: data.serialNumber,
-            manufacture_date: data.manufactureDate,
-            purchase_date: data.purchaseDate,
-            purchase_price: newPurchasePrice,
-            original_cost: newOriginalCost,
-            specifications: data.specifications,
-            img_url: data.imgUrl,
-            install_location: data.installLocation,
-        };
-        const changedFields = Object.entries(patch)
-            .filter(([,v]) => v !== undefined)
-            .map(([k]) => k);
-        if (!changedFields.length) return device;
+            const manufacturerId = data.manufacturerId ?? current.manufacturer_id;
+            const supplierId = data.supplierId ?? current.supplier_id;
+            const sourceIds = [...new Set([
+                manufacturerId,
+                supplierId,
+            ])].sort((a, b) => a - b);
+            for (const sourceId of sourceIds) {
+                await tx.$queryRaw`
+                    SELECT id FROM sources
+                    WHERE id = ${sourceId}
+                    FOR UPDATE
+                `;
+            }
 
-        const updated = await this.prisma.devices.update({
-            where: { id: device.id },
-            data: patch,
-            include: this.include,
+            const sources = await tx.sources.findMany({
+                where: { id: { in: sourceIds }},
+            });
+            const manufacturer = sources.find(
+                source => source.id === manufacturerId,
+            );
+            const supplier = sources.find(
+                source => source.id === supplierId,
+            );
+
+            if (!manufacturer || !supplier)
+                throw new NotFoundException('Manufacturer or Supplier not found');
+            if (manufacturer.type !== DeviceSourceType.MANUFACTURER)
+                throw new ConflictException('manufacturerId must belong to a MANUFACTURER');
+            if (supplier.type !== DeviceSourceType.SUPPLIER)
+                throw new ConflictException('supplierId must belong to a SUPPLIER');
+
+            const newPurchasePrice = data.purchasePrice === undefined ? undefined :
+                new Prisma.Decimal(data.purchasePrice);
+            const newOriginalCost = data.originalCost === undefined ? undefined :
+                new Prisma.Decimal(data.originalCost);
+
+            const patch: Prisma.devicesUpdateInput = {
+                ...(data.categoryId && {
+                    categories: { connect: { id: data.categoryId }},
+                }),
+                ...(data.manufacturerId && {
+                    sources_devices_manufacturer_idTosources: { connect: { id: data.manufacturerId }},
+                }),
+                ...(data.supplierId && {
+                    sources_devices_supplier_idTosources: { connect: { id: data.supplierId }},
+                }),
+                code: data.code,
+                model: data.model,
+                serial_number: data.serialNumber,
+                manufacture_date: myParseDate(data.manufactureDate, 'manufacture date'),
+                purchase_date: myParseDate(data.purchaseDate, 'purchase date'),
+                purchase_price: newPurchasePrice,
+                original_cost: newOriginalCost,
+                specifications: data.specifications,
+                install_location: data.installLocation,
+            };
+            const changedFields = Object.entries(patch)
+                .filter(([, value]) => value !== undefined)
+                .map(([key]) => key);
+            if (!changedFields.length)
+                return { device: current, changedFields };
+
+            const updated = await tx.devices.update({
+                where: { id },
+                data: patch,
+                include: this.deviceInclude,
+            });
+            return { device: updated, changedFields };
         });
-        this.events.updated(updated.id, updated.code, changedFields, actor.sub);
-        return toDeviceView(updated);
+        const view = await this.toDeviceView(result.device);
+        if (result.changedFields.length)
+            this.events.updated(view, result.changedFields, actor.sub);
+        return view;
     }
 
     async changeStage({ id, newState, actor }: ChangeDeviceStateMsg): Promise<DeviceView> {
-        const device = await this.findById(id);
-        if (!isAllowedToChangeState(device.state, newState))
-            throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
-        
-        const [updated, _] = await this.prisma.$transaction([
-            this.prisma.devices.update({
+        const result = await this.prisma.$transaction(async tx => {
+            await tx.$queryRaw`
+                SELECT id FROM devices
+                WHERE id = ${id}
+                FOR UPDATE
+            `;
+            const current = await tx.devices.findUnique({
+                where: { id }, select: { id: true, state: true },
+            });
+            if (!current) throw new NotFoundException('Device not found');
+
+            if (!isAllowedToChangeState(current.state, newState))
+                throw new ConflictException(`
+                    Cannot change device state 
+                    from ${current.state} to ${newState}
+                `);
+
+            const updated = await tx.devices.update({
                 where: { id }, data: { state: newState },
-                include: this.include,
-            }),
-            this.prisma.device_activity_histories.create({
+                include: this.deviceInclude,
+            });
+            await tx.device_activity_histories.create({
                 data: {
                     device_id: id,
-                    old_state: device.state,
+                    old_state: current.state,
                     new_state: newState,
                 },
-            }),
-        ]);
-        const view = toDeviceView(updated);
-        this.events.stateChanged(view.id, view.code, device.state, newState, actor.sub);
+            });
+
+            return { updated, oldState: current.state };
+        });
+        const view = await this.toDeviceView(result.updated);
+        this.events.stateChanged(view, result.oldState, actor.sub);
         return view;
     }
 
     async getHistory(q: FindDeviceHistoryDto): Promise<Paginated<DeviceHistoryView>> {
-        const {
-            page = 1,
-            limit = 20,
-        } = q;
+        const { page = 1, limit = 20 } = q;
 
         const [total, history] = await this.prisma.$transaction([
             this.prisma.device_activity_histories.count({ where: { device_id: q.deviceId } }),
@@ -225,5 +344,75 @@ export class DevicesService {
             items: history.map(toDeviceHistoryView),
             total, page, limit
         };
+    }
+
+    async requestImageUpload({ id, dto, actor }: RequestDeviceImageUploadMsg): Promise<DeviceImageUploadTicket> {
+        const existed = await this.prisma.devices.findUnique({ 
+            where: { id }, select: { id: true },
+        });
+        if (!existed) throw new NotFoundException('Device not found');
+
+        const { objectKey, ticket } = await this.storage.createUpload({
+            purpose: FILE_PURPOSES.DEVICE_IMAGE,
+            fileName: dto.fileName,
+            mimeType: dto.mimeType,
+            sizeBytes: dto.sizeBytes,
+        });
+        const image = await this.prisma.device_images.create({
+            data: {
+                device_id: id,
+                object_key: objectKey,
+                file_name: dto.fileName,
+                mime_type: dto.mimeType,
+                size_bytes: BigInt(dto.sizeBytes),
+                uploaded_by: actor.sub,
+            },
+        });
+
+        return { imageId: image.id, ...ticket };
+    }
+
+    async confirmImageUpload({ id, imageId }: ConfirmDeviceImageMsg): Promise<DeviceImageView> {
+        const image = await this.prisma.device_images.findFirst({
+            where: { id: imageId, device_id: id },
+        });
+        if (!image) throw new NotFoundException('Device image not found');
+        if (image.status === 'ready') return this.toImageView(image);
+
+        let sizeBytes: number;
+        try {
+            ({ sizeBytes } = await this.storage.verifyUpload({
+                objectKey: image.object_key,
+                purpose: FILE_PURPOSES.DEVICE_IMAGE,
+                mimeType: image.mime_type,
+            }));
+        } catch (error) {
+            if (error instanceof UploadRejectedException) {
+                await this.prisma.device_images.delete({
+                    where: { id: imageId },
+                }).catch(() => undefined);
+            }
+            throw error;
+        }
+
+        const updated = await this.prisma.device_images.update({
+            where: { id: imageId },
+            data: {
+                status: 'ready',
+                size_bytes: BigInt(sizeBytes),
+            },
+        });
+        return this.toImageView(updated);
+    }
+
+    async removeImage({ id, imageId }: RemoveDeviceImageMsg) {
+        const image = await this.prisma.device_images.findFirst({
+            where: { id: imageId, device_id: id },
+        });
+        if (!image) throw new NotFoundException('Device image not found');
+
+        await this.storage.deleteObject(image.object_key);
+        await this.prisma.device_images.delete({ where: { id: imageId } });
+        return { message: 'Device image removed' };
     }
 }

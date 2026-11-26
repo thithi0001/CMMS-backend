@@ -35,18 +35,21 @@ export class DeviceEventsPublisher implements OnApplicationBootstrap {
             deviceCode: d.code
         }, actorId);
     }
-    updated(id: number, code: string, changedFields: string[], actorId: number) {
+
+    updated(d: DeviceView, changedFields: string[], actorId: number) {
         this.publish<DeviceEventPayload>(DEVICE_EVT.UPDATED, {
-            deviceId: id,
-            deviceCode: code,
+            deviceId: d.id,
+            deviceCode: d.code,
             changedFields
         }, actorId);
     }
-    stateChanged(id: number, code: string, oldState: DeviceState, newState: DeviceState, actorId: number) {
+
+    stateChanged(d: DeviceView, oldState: DeviceState, actorId: number) {
         this.publish<DeviceStateChangePayload>(DEVICE_EVT.STATE_CHANGED, {
-            deviceId: id,
-            deviceCode: code,
-            oldState, newState
+            deviceId: d.id,
+            deviceCode: d.code,
+            newState: d.state,
+            oldState
         }, actorId);
     }
 }
