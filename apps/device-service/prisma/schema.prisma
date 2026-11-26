@@ -85,7 +85,6 @@ model devices {
   accumulated_deprication                  Decimal?                    @default(0) @db.Decimal(18, 2)
   book_value                               Decimal?                    @db.Decimal(18, 2)
   specifications                           Json?
-  img_url                                  String?
   state                                    device_state                @default(available)
   last_maintenance_at                      DateTime?                   @db.Date
   created_at                               DateTime?                   @default(now()) @db.Timestamptz(6)
@@ -93,6 +92,7 @@ model devices {
   install_location                         String?
   device_activity_histories                device_activity_histories[]
   device_employee                          device_employee[]
+  device_images                            device_images[]
   categories                               categories                  @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sources_devices_manufacturer_idTosources sources                     @relation("devices_manufacturer_idTosources", fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sources_devices_supplier_idTosources     sources                     @relation("devices_supplier_idTosources", fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -171,8 +171,25 @@ model sources {
   type                                     source_type
   created_at                               DateTime?   @default(now()) @db.Timestamptz(6)
   updated_at                               DateTime?   @default(now()) @db.Timestamptz(6)
+  code                                     String      @unique @db.VarChar(20)
   devices_devices_manufacturer_idTosources devices[]   @relation("devices_manufacturer_idTosources")
   devices_devices_supplier_idTosources     devices[]   @relation("devices_supplier_idTosources")
+}
+
+model device_images {
+  id          Int          @id @default(autoincrement())
+  device_id   Int
+  object_key  String       @unique(map: "uq_device_images_object_key") @db.VarChar(512)
+  file_name   String       @db.VarChar(255)
+  mime_type   String       @db.VarChar(100)
+  size_bytes  BigInt       @default(0)
+  status      image_status @default(uploading)
+  uploaded_by Int
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  devices     devices      @relation(fields: [device_id], references: [id], onDelete: Cascade, map: "fk_device_images_device")
+
+  @@index([device_id, status], map: "idx_device_images_device_status")
+  @@index([status, created_at], map: "idx_device_images_status_created")
 }
 
 enum depreciation_method {
@@ -217,4 +234,9 @@ enum request_status {
 enum source_type {
   manufacturer
   supplier
+}
+
+enum image_status {
+  uploading
+  ready
 }
