@@ -3,7 +3,7 @@
 Gateway + 8 service, giao tiếp qua RabbitMQ (CloudAMQP), mỗi service một database trên Neon (trừ `report-service`), đóng gói bằng Docker.
 
 > **Phạm vi hiện tại:** chưa có Saga, chưa có Redis. Khi cần, chỉ thêm code vào từng service, không phải đổi cấu trúc dưới đây.
-> **Phiên bản tham chiếu:** Node 22, NestJS 11, Prisma 7. Nếu dùng phiên bản khác, kiểm tra lại docs của Prisma (`prisma.config.ts`, driver adapter) và `@nestjs/microservices` (RabbitMQ wildcards).
+> **Phiên bản tham chiếu:** Node 24 (Docker), NestJS 11, Prisma 7. Nếu dùng phiên bản khác, kiểm tra lại docs của Prisma (`prisma.config.ts`, driver adapter) và `@nestjs/microservices` (RabbitMQ wildcards).
 
 ---
 
@@ -352,7 +352,7 @@ Lưu ý: vì `JWT_SECRET` nằm ở `.env` gốc nên mọi container đều nh�
 
 ## 8. Docker
 
-Docker chỉ đóng gói 9 app. **Không** có container PostgreSQL/RabbitMQ vì dùng Neon và CloudAMQP. Chỉ `api-gateway` mở port ra ngoài; các service chỉ kết nối **ra** CloudAMQP và Neon.
+Docker chỉ đóng gói 9 app. **Không** có container PostgreSQL/RabbitMQ vì dùng Neon và CloudAMQP. Chỉ `api-gateway` mở port ra ngoài; các service chỉ kết nối **ra** CloudAMQP và Neon. Docker image dùng Node 24; Prisma client được generate trong lúc build mà không cần kết nối database.
 
 `docker/Dockerfile`:
 
@@ -380,7 +380,7 @@ ENV APP=$APP
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
-CMD node dist/apps/$APP/main.js
+CMD node dist/apps/$APP/apps/$APP/src/main.js
 ```
 
 `.dockerignore`:
@@ -449,7 +449,27 @@ services:
     env_file: [.env, apps/audit-service/.env]
 ```
 
-Compose báo lỗi nếu file trong `env_file` không tồn tại, nên khi dựng dần chỉ build/up các service đã có `.env`: `docker compose up --build user-service api-gateway`.
+Compose báo lỗi nếu file trong `env_file` không tồn tại. Hiện tại các service trong compose đều có file `.env` tương ứng. Chạy các lệnh từ thư mục `backend`:
+
+```bash
+# Kiểm tra cấu hình Compose và các file env
+docker compose config -q
+
+# Build và chạy gateway + user-service; gateway mở ở http://localhost:3000
+docker compose up --build user-service api-gateway
+
+# Chạy cả 9 app ở chế độ nền (cần cấu hình đủ biến môi trường/dịch vụ bên ngoài)
+docker compose up --build -d
+
+# Xem trạng thái và log
+docker compose ps
+docker compose logs -f api-gateway user-service
+
+# Dừng và xóa các container/network do Compose tạo
+docker compose down
+```
+
+Chỉ build một service: `docker compose build user-service`. Sau khi đổi code, chạy lại service cần thiết bằng `docker compose up --build -d user-service`. Trên Windows PowerShell, vào thư mục backend trước, ví dụ `Set-Location 'E:\Trường\DATN\CMMS\backend'`.
 
 Số kết nối CloudAMQP: mỗi app dùng khoảng 2 connection (1 server lắng nghe + 1 client), gateway 1. Với 9 app là khoảng 17. Gói free của CloudAMQP có giới hạn connection (kiểm tra lại trên trang gói), nên khi dev đừng chạy đồng thời cả bản local và bản Docker của cùng một service.
 
@@ -703,13 +723,13 @@ export * from './types/pagination';
 
 ### 9.5 Kiểm tra cấu hình build
 
-Sau khi dựng service đầu tiên, chạy `npx nest build user-service` và xem file entry nằm ở đâu:
+Sau khi dựng service đầu tiên, chạy `npx nest build user-service` và kiểm tra entry trong thư mục build:
 
 ```bash
-ls dist/apps/user-service
+ls dist/apps/user-service/apps/user-service/src
 ```
 
-Nếu có `main.js` ngay trong đó thì `CMD node dist/apps/$APP/main.js` trong Dockerfile đúng. Nếu entry nằm ở `dist/apps/user-service/src/main.js` thì sửa `CMD` cho khớp.
+Nest build hiện tạo `main.js` tại `dist/apps/<app>/apps/<app>/src/main.js`; Dockerfile và script `start:prod` dùng đúng đường dẫn này.
 
 ### 9.6 Smoke test RabbitMQ (quan trọng, làm khi dựng service đầu tiên)
 

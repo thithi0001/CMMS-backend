@@ -135,7 +135,7 @@ export class AuthService {
             actorId,
             await bcrypt.hash(dto.newPassword, 12)
         );
-        this.events.passwordChanged(actorId);
+        this.events.passwordChanged(toUserView(user));
         return {
             message: 'Password changed successfully'
         };

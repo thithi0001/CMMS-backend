@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import {
     IsBoolean, IsDateString,
     IsEmail, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString,
@@ -163,7 +162,6 @@ export class UpdateAssignDeviceDto {
 }
 
 export class FindAssignDeviceQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number
     @IsOptional() @IsInt() @Min(1) categoryId?: number
     @IsOptional() @IsIn(Object.values(RequestStatus)) status?: RequestStatus;
 }
@@ -182,7 +180,6 @@ export class UpdateRetrieveDeviceDto {
 
 export class FindRetrieveDeviceQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isConfirmed?: boolean;
-    @IsOptional() @IsInt() @Min(1) userId?: number;
 }
 
 export class CreateHandoverDeviceDto {
@@ -199,7 +196,6 @@ export class UpdateHandoverDeviceDto {
 
 export class FindHandoverDeviceQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isHandoverd?: boolean;
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsIn(Object.values(HandoverType)) type?: HandoverType;
 }
@@ -224,9 +220,7 @@ export class CreateDisposeDeviceDto {
     disposalValue!: string;    
 }
 
-export class FindDisposeDeviceQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number
-}
+export class FindDisposeDeviceQueryDto extends FindQueryDto {}
 
 export class CreateDeviceEmployeeDto {
     @IsInt() @Min(1) deviceId!: number;
@@ -239,7 +233,6 @@ export class UpdateDeviceEmployeeDto {
 }
 
 export class FindDeviceEmployeeQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number
     @IsOptional() @IsBoolean() isReturned?: boolean;
 }
 
