@@ -1,0 +1,81 @@
+@baseUrl = http://localhost:3000/api
+@username =
+@password =
+@accessToken = {{login.response.body.$.data.accessToken}}
+@itemId = {{createItem.response.body.$.data.id}}
+@imageId = {{requestItemImage.response.body.$.data.imageId}}
+@uploadUrl = {{requestItemImage.response.body.$.data.uploadUrl}}
+
+### Auth: login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Inventory: list items
+GET {{baseUrl}}/items?page=1&limit=20
+Authorization: Bearer {{accessToken}}
+
+### Inventory: create item
+# @name createItem
+POST {{baseUrl}}/items
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "manufacturerId": 1,
+  "supplierId": 1,
+  "name": "Test item",
+  "code": "TEST-ITEM",
+  "unit": "piece",
+  "description": "Created by inventory HTTP test",
+  "minimum": 1
+}
+
+### Inventory: get item
+GET {{baseUrl}}/items/{{itemId}}
+Authorization: Bearer {{accessToken}}
+
+### Inventory: update item
+PATCH {{baseUrl}}/items/{{itemId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated test item",
+  "minimum": 2
+}
+
+### Inventory: request item image upload
+# @name requestItemImage
+POST {{baseUrl}}/items/{{itemId}}/images/upload-url
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "fileName": "test-image.png",
+  "mimeType": "image/png",
+  "sizeBytes": 666
+}
+
+### Inventory: upload file directly to bucket
+PUT {{uploadUrl}}
+Content-Type: image/png
+
+< ./test-image.png
+
+### Inventory: confirm item image
+POST {{baseUrl}}/items/{{itemId}}/images/{{imageId}}/confirm
+Authorization: Bearer {{accessToken}}
+
+### Inventory: get item with signed image URL
+GET {{baseUrl}}/items/{{itemId}}
+Authorization: Bearer {{accessToken}}
+
+### Inventory: remove item image
+DELETE {{baseUrl}}/items/{{itemId}}/images/{{imageId}}
+Authorization: Bearer {{accessToken}}

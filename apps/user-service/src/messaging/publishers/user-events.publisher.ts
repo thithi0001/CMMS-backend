@@ -48,22 +48,27 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
         this.publish(USER_EVT.LOGIN_FAILED, payload);
     }
 
-    updated(userId: number, changedFields: string[], actorId: number) {
+    updated(u: UserView, changedFields: string[], actorId: number) {
         this.publish<UserUpdatedPayload>(USER_EVT.UPDATED, {
-            userId, changedFields
+            userId: u.id, 
+            username: u.username,
+            changedFields
         }, actorId);
     }
 
-    roleChanged(userId: number, oldRole: string, newRole: string, actorId: number) {
+    roleChanged(u: UserView, oldRole: string, newRole: string, actorId: number) {
         this.publish<UserRoleChangedPayload>(USER_EVT.ROLE_CHANGED, {
-            userId, oldRole, newRole
+            userId: u.id,
+            username: u.username, 
+            oldRole, newRole
         }, actorId);
     }
 
-    passwordChanged(userId: number) {
+    passwordChanged(u: UserView) {
         this.publish<UserPasswordChangedPayload>(USER_EVT.PASSWORD_CHANGED, {
-            userId
-        }, userId);
+            userId: u.id,
+            username: u.username
+        }, u.id);
     }
 
     deactivated(u: UserView, actorId: number) {

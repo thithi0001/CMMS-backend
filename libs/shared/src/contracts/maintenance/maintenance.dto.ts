@@ -29,8 +29,6 @@ export class ChangeTaskStageDto {
 }
 
 export class FindTaskQueryDto extends FindQueryDto {
-    // search: title, deviceCode:device-service->deviceId, employeeCode/username:user-service->userId
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) deviceId?: number;
     @IsOptional() @IsIn(Object.values(TaskTag)) tag?: TaskTag;
     @IsOptional() @IsIn(Object.values(TaskStage)) stage?: TaskStage;
@@ -50,7 +48,6 @@ export class UpdateTicketDto {
 }
 
 export class FindTicketQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) deviceId?: number;
     @IsOptional() @IsBoolean() isConfirmed?: boolean;
     @IsOptional() @IsIn(Object.values(Priority)) priority?: Priority;
@@ -63,7 +60,6 @@ export class CreateAssigneeDto {
 }
 
 export class FindAssigneeQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
 }
 
@@ -79,7 +75,6 @@ export class UpdateTaskProposalDto {
 }
 
 export class FindTaskProposalQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
 }
@@ -95,7 +90,6 @@ export class UpdateDamageReportDto {
 }
 
 export class FindDamageReportQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsInt() @Min(1) deviceId?: number;
     @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
@@ -112,7 +106,6 @@ export class UpdateDisposeProposalDto {
 }
 
 export class FindDisposeProposalQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsInt() @Min(1) deviceId?: number;
     @IsOptional() @IsIn(Object.values(ProposalStatus)) status?: ProposalStatus;
@@ -130,7 +123,6 @@ export class UpdateAcceptanceDto {
 }
 
 export class FindAcceptanceQueryDto extends FindQueryDto {
-    @IsOptional() @IsInt() @Min(1) userId?: number;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
     @IsOptional() @IsIn(Object.values(AcceptanceStatus)) status?: AcceptanceStatus;
 }

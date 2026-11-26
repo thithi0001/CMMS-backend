@@ -2,7 +2,9 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
@@ -22,6 +24,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@app/storage": [
+        "./libs/storage/src"
+      ],
+      "@app/storage/*": [
+        "./libs/storage/src/*"
+      ],
       "@app/shared": [
         "./libs/shared/src"
       ],
