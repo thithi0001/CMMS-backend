@@ -23,7 +23,7 @@ export class DisposeDevicesService {
     async create({ dto, actor }: CreateDisposeDeviceMsg): Promise<DisposeDeviceView> {
         const device = await this.devicesService.findById(dto.deviceId);
         if (!isAllowedToChangeState(device.state, DeviceState.DISPOSED))
-            throw new ConflictException(`Cannot change device state from ${device.state} to disposed`);
+            throw new ConflictException(`Cannot change device state from ${device.state} to ${DeviceState.DISPOSED}`);
 
         const [_, disposal] = await this.prisma.$transaction([
             this.prisma.devices.update({
