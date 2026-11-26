@@ -9,7 +9,7 @@
 GET {{baseUrl}}/
 
 ### Auth: login (public)
-# Lấy accessToken và refreshToken từ response để gọi các request bên dưới.
+# Run this request first to obtain tokens for the requests below.
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -19,12 +19,12 @@ Content-Type: application/json
   "password": "{{password}}"
 }
 
-### Auth: lấy thông tin tài khoản hiện tại (cần đăng nhập)
+### Auth: current user (requires login)
 GET {{baseUrl}}/auth/me
 Authorization: Bearer {{accessToken}}
 
-### Auth: đổi mật khẩu (cần đăng nhập)
-# Thay giá trị currentPassword/newPassword trước khi chạy.
+### Auth: change password (requires login)
+# Replace currentPassword/newPassword before running.
 PATCH {{baseUrl}}/auth/change-password
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
@@ -34,7 +34,7 @@ Content-Type: application/json
   "newPassword": "NewPassword123"
 }
 
-### Auth: làm mới token (public)
+### Auth: refresh token (public)
 POST {{baseUrl}}/auth/refresh-token
 Content-Type: application/json
 
@@ -42,11 +42,18 @@ Content-Type: application/json
   "refreshToken": "{{refreshToken}}"
 }
 
-### Users: danh sách người dùng (ADMIN hoặc MANAGER)
+### Users: list (ADMIN or MANAGER)
 GET {{baseUrl}}/users?page=1&limit=10&search=nv
 Authorization: Bearer {{accessToken}}
 
-### Users: tạo người dùng (ADMIN hoặc MANAGER)
+### Users: update
+PATCH {{baseUrl}}/users/5
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}
+
+### Users: create (ADMIN or MANAGER)
 # @name createUser
 POST {{baseUrl}}/users
 Authorization: Bearer {{accessToken}}
@@ -62,11 +69,11 @@ Content-Type: application/json
   "phone": "0900000001"
 }
 
-### Users: lấy người dùng theo ID
+### Users: get by ID
 GET {{baseUrl}}/users/{{userId}}
 Authorization: Bearer {{accessToken}}
 
-### Users: đổi role (ADMIN)
+### Users: change role (ADMIN)
 PATCH {{baseUrl}}/users/{{userId}}/role
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
@@ -75,7 +82,11 @@ Content-Type: application/json
   "roleCode": "TECHNICIAN"
 }
 
-### Users: vô hiệu hóa người dùng (ADMIN)
-# Chạy sau khi tạo người dùng thử nghiệm.
+### Users: deactivate (ADMIN)
+# Run after creating the test user.
 DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Employees: list
+GET {{baseUrl}}/employees
 Authorization: Bearer {{accessToken}}

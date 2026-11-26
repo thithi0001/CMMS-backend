@@ -19,7 +19,7 @@ import { toAssignExpertiseView, toExpertiseView } from "../views.mapper";
 export class ExpertisesService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly usersServise: UsersService,
+        private readonly usersService: UsersService,
         private readonly events: ExpertiseEventsPublisher,
     ) {}
     
@@ -88,10 +88,7 @@ export class ExpertisesService {
     }
 
     async findAll(q: FindExpertiseQueryDto): Promise<Paginated<ExpertiseView>> {
-        const {
-            page = 1,
-            limit = 20,
-        } = q;
+        const { page = 1, limit = 20 } = q;
         const where: Prisma.expertisesWhereInput = {
             ...(q.search && {
                 code: { contains: q.search, mode: 'insensitive'},
@@ -126,7 +123,7 @@ export class ExpertisesService {
         expertise: ExpertiseView,
         assignedAt: string | undefined,
     }> {
-        const user = await this.usersServise.findById(data.userId);
+        const user = await this.usersService.findById(data.userId);
         if (actor.sub !== user.id )
             throw new ForbiddenException('Cannot assign expertise to other user');
         if (user.role.code !== Role.TECHNICIAN)
@@ -156,7 +153,7 @@ export class ExpertisesService {
         expertise: ExpertiseView,
         revokedAt: string | undefined,
     }> {
-        const user = await this.usersServise.findById(data.userId);
+        const user = await this.usersService.findById(data.userId);
         if (actor.sub !== user.id )
             throw new ForbiddenException('Cannot revoke other user expertise');
         const expertise = await this.findById(data.expertiseId);

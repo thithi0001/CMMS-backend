@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:3000/api
+@username = 
+@password = 
+@accessToken = {{login.response.body.$.data.accessToken}}
+
+### Auth: login (public)
+# Run this request first to obtain an access token for this file.
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Maintenance: list tasks
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{accessToken}}

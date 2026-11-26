@@ -46,13 +46,16 @@ export class AuthService {
             throw new ForbiddenException('Account has been deactivated');
         }
         const employee = await this.employees.findEmployeeByUserId(user.id);
+        if (!employee) {
+            throw new UnauthorizedException('User is not permitted to access');
+        }
 
         const payload: JwtPayload = {
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
             roleCode: user.roles.code as Role,
-            employeeId: employee?.id,
+            employeeId: employee.id,
         };
         const { accessToken, refreshToken } = await this.generateTokens(payload);
         const view = toUserView(user);
@@ -86,13 +89,16 @@ export class AuthService {
         }
 
         const employee = await this.employees.findEmployeeByUserId(user.id);
+        if (!employee) {
+            throw new UnauthorizedException('User is not permitted to access');
+        }
 
         return this.generateTokens({
             sub: user.id,
             username: user.username,
             roleId: user.role_id,
             roleCode: user.roles.code as Role,
-            employeeId: employee?.id,
+            employeeId: employee.id,
         });
     }
 

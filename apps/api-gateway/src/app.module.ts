@@ -8,6 +8,8 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { DevicesModule } from './modules/devices/devices.module';
     AuthModule,
     UsersModule,
     DevicesModule,
+    MaintenanceModule,
+    InventoryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

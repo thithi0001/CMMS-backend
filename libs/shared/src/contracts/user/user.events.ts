@@ -18,17 +18,20 @@ export interface UserLoginFailedPayload {
 
 export interface UserUpdatedPayload {
     userId: number;
+    username: string;
     changedFields: string[];
 }
 
 export interface UserRoleChangedPayload {
     userId: number;
+    username: string;
     oldRole: string;
     newRole: string;
 }
 
 export interface UserPasswordChangedPayload {
     userId: number;
+    username: string;
 }
 
 export interface DepartmentEventPayload {

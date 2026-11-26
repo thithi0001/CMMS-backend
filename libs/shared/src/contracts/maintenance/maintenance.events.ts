@@ -1,0 +1,66 @@
+import { TaskStage } from "@app/shared";
+
+export interface TaskEventPayload {
+    taskId: number;
+    creatorId: number;
+    stage: TaskStage;
+    changedFields?: string[];
+}
+
+export interface TaskStageChangePayload {
+    taskId: number;
+    creatorId: number;
+    oldStage: TaskStage;
+    newStage: TaskStage;
+}
+
+export interface TaskAttachmentPayload {
+    taskId: number;
+    creatorId: number;
+    attachmentId: number;
+    type: 'ticket' | 'device';
+}
+
+export interface TicketEventPayload {
+    ticketId: number;
+    creatorId: number;
+    deviceId: number;
+    confirmerId?: number;
+    changedFields?: string[];
+}
+
+export interface AcceptanceEventPayload {
+    acceptanceId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface AssigneeEventPayload {
+    id: number;
+    assigneeId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface DamageReportEventPayload {
+    reportId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface DisposeProposalEventPayload {
+    proposalId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+
+export interface TaskProposalEventPayload {
+    proposalId: number;
+    creatorId: number;
+    taskId: number;
+    changedFields?: string[];
+}
+

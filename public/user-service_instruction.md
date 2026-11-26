@@ -12,26 +12,28 @@ Service này **xác thực** (username, password, role, cấp JWT) và **quản 
 
 | Pattern | Payload | Trả về | Ai gọi |
 |---|---|---|---|
-| `cmd.user.register` | `RegisterDto` | `UserView` (role luôn là `EMPLOYEE`) | Gateway `POST /auth/register` |
-| `cmd.user.login` | `LoginDto` | `LoginResult` `{accessToken, user}` | Gateway `POST /auth/login` |
-| `cmd.user.change_password` | `{actorId, dto}` | `{message}` | Gateway `PATCH /auth/change-password` |
-| `cmd.user.create` | `{dto: CreateUserDto, actorId}` | `UserView` | ADMIN tạo user có role |
-| `cmd.user.find_all` | `FindUsersQueryDto` | `Paginated<UserView>` | ADMIN, MANAGER |
-| `cmd.user.find_by_id` | `{id}` | `UserView` | Gateway `/auth/me`, `/users/:id` |
-| `cmd.user.update` | `{id, data, actor}` | `UserView` | Chính chủ hoặc ADMIN |
-| `cmd.user.update_role` | `{id, role, actor}` | `UserView` | ADMIN |
-| `cmd.user.deactivate` | `{id, actor}` | `UserView` | ADMIN |
+| `cmd.user.login` | `LoginDto` | `LoginResult` `{accessToken, refreshToken, user}` | Gateway `POST /auth/login` |
+| `cmd.user.refresh_token` | `RefreshTokenDto` | `RefreshTokenResult` | Gateway `POST /auth/refresh-token` |
+| `cmd.user.change_password` | `{actorId: number, dto}` | `{message}` | Gateway `PATCH /auth/change-password` |
+| `cmd.user.create` | `{dto: CreateUserDto, actorId: number}` | `UserView` | ADMIN hoặc MANAGER tạo user |
+| `cmd.user.find_all` | `FindUserQueryDto` | `Paginated<UserView>` | ADMIN, MANAGER |
+| `cmd.user.find_by_id` | `{id: number}` | `UserView` | Gateway `/auth/me`, `/users/:id` |
+| `cmd.user.update` | `{id: number, data, actor}` | `UserView` | Người dùng tự cập nhật hồ sơ |
+| `cmd.user.update_role` | `{id: number, roleCode, actor}` | `UserView` | ADMIN |
+| `cmd.user.deactivate` | `{id: number, actor}` | `UserView` | ADMIN |
 | `cmd.user.stats` | `{}` | `UserStats` | report-service |
+
+`cmd.user.forget_password` hiện có handler placeholder; chưa triển khai quy trình quên/đặt lại mật khẩu. `cmd.user.register` không có trong contract hiện tại.
 
 ### Sự kiện service phát
 
-`evt.user.registered`, `created`, `logged_in`, `login_failed`, `updated`, `role_changed`, `password_changed`, `deactivated`. Service này **chưa nhận** sự kiện nào (thư mục `consumers/` để dành, xem mục 12).
+`evt.user.created`, `logged_in`, `login_failed`, `updated`, `role_changed`, `password_changed`, `deactivated`. Service này **chưa nhận** sự kiện nào (thư mục `consumers/` để dành, xem mục 12).
 
 ### Quyết định thiết kế
 
-- `user-service` **ký** JWT, `api-gateway` **xác minh** bằng cùng `JWT_SECRET`. Chỉ có access token (chưa có refresh token).
-- Gateway kiểm tra role thô (ai được vào route nào); `user-service` kiểm tra quy tắc nghiệp vụ (chính chủ hoặc admin, không tự đổi role của mình).
-- Một bảng `users` chứa cả thông tin đăng nhập lẫn hồ sơ.
+- `user-service` **ký** access token và refresh token; `api-gateway` **xác minh** access token bằng `JWT_SECRET`. Refresh token dùng `JWT_REFRESH_SECRET` và thời hạn `JWT_REFRESH_EXPIRES_IN`.
+- Gateway kiểm tra role thô (ai được vào route nào); `user-service` chỉ cho phép chính chủ cập nhật hồ sơ và ADMIN đổi role/vô hiệu hóa tài khoản.
+- Bảng `users` chứa thông tin tài khoản; role được liên kết qua `users.role_id` tới `roles.id`. Thông tin nhân sự/phòng ban nằm ở các bảng riêng.
 - Dữ liệu người dùng (kể cả admin) đã có sẵn trong Neon nên **không có seeder**. Schema Prisma được kéo về bằng `prisma db pull`, không dùng `prisma migrate`.
 
 ---
@@ -44,20 +46,23 @@ Contract là nơi `api-gateway` và `user-service` thống nhất với nhau. T�
 
 ```ts
 export const USER_CMD = {
-  REGISTER: 'cmd.user.register',
-  LOGIN: 'cmd.user.login',
-  CHANGE_PASSWORD: 'cmd.user.change_password',
   CREATE: 'cmd.user.create',
+  LOGIN: 'cmd.user.login',
+  REFRESH_TOKEN: 'cmd.user.refresh_token',
+  CHANGE_PASSWORD: 'cmd.user.change_password',
+  FORGET_PASSWORD: 'cmd.user.forget_password',
   FIND_ALL: 'cmd.user.find_all',
   FIND_BY_ID: 'cmd.user.find_by_id',
+  FIND_BY_EMAIL: 'cmd.user.find_by_email',
+  FIND_BY_USERNAME: 'cmd.user.find_by_username',
   UPDATE: 'cmd.user.update',
   UPDATE_ROLE: 'cmd.user.update_role',
   DEACTIVATE: 'cmd.user.deactivate',
+  ACTIVATE: 'cmd.user.activate',
   STATS: 'cmd.user.stats',
 } as const;
 
 export const USER_EVT = {
-  REGISTERED: 'evt.user.registered',
   CREATED: 'evt.user.created',
   LOGGED_IN: 'evt.user.logged_in',
   LOGIN_FAILED: 'evt.user.login_failed',
@@ -65,43 +70,48 @@ export const USER_EVT = {
   ROLE_CHANGED: 'evt.user.role_changed',
   PASSWORD_CHANGED: 'evt.user.password_changed',
   DEACTIVATED: 'evt.user.deactivated',
+  ACTIVATED: 'evt.user.activated',
 } as const;
 ```
 
 `user.dto.ts` (DTO đi qua ranh giới gateway ↔ service nên đặt ở đây, một định nghĩa duy nhất)
 
 ```ts
-import { Type } from 'class-transformer';
 import {
-  IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString,
-  Matches, Max, MaxLength, Min, MinLength,
+  IsDateString, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString,
+  Matches, MaxLength, MinLength,
 } from 'class-validator';
 import { Role } from '../../types/role';
+import { FindQueryDto } from '../../types/find-query';
 
-export class RegisterDto {
+export class CreateUserDto {
   @IsString()
   @MinLength(3)
-  @MaxLength(32)
+  @MaxLength(20)
   @Matches(/^[a-zA-Z0-9_.]+$/, { message: 'username chỉ gồm chữ, số, dấu _ và .' })
-  username: string;
+  username!: string;
 
   @IsString()
   @MinLength(8)
-  @MaxLength(72) // giới hạn của bcrypt
-  password: string;
+  @MaxLength(72)
+  password!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsIn(Object.values(Role))
+  roleCode!: Role;
 
   @IsString()
   @IsNotEmpty()
-  fullName: string;
+  fullname!: string;
 
-  @IsOptional() @IsEmail() email?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() department?: string;
-}
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  dob!: string;
 
-export class CreateUserDto extends RegisterDto {
-  @IsIn(Object.values(Role))
-  role: Role;
+  @IsString()
+  phone!: string;
 }
 
 export class LoginDto {
@@ -109,16 +119,19 @@ export class LoginDto {
   @IsString() @IsNotEmpty() password: string;
 }
 
+export class RefreshTokenDto {
+  @IsString() @IsNotEmpty() refreshToken!: string;
+}
+
 export class UpdateUserDto {
-  @IsOptional() @IsString() @IsNotEmpty() fullName?: string;
-  @IsOptional() @IsEmail() email?: string;
+  @IsOptional() @IsString() fullname?: string;
   @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() department?: string;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) dob?: string;
 }
 
 export class UpdateRoleDto {
   @IsIn(Object.values(Role))
-  role: Role;
+  roleCode!: Role;
 }
 
 export class ChangePasswordDto {
@@ -130,11 +143,8 @@ export class ChangePasswordDto {
   newPassword: string;
 }
 
-export class FindUsersQueryDto {
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
-  @IsOptional() @IsString() search?: string;
-  @IsOptional() @IsIn(Object.values(Role)) role?: Role;
+export class FindUserQueryDto extends FindQueryDto {
+  @IsOptional() @IsIn(Object.values(Role)) roleCode?: Role;
 }
 ```
 
@@ -145,12 +155,12 @@ import { JwtPayload } from '../../types/jwt-payload';
 import { Role } from '../../types/role';
 import { ChangePasswordDto, CreateUserDto, UpdateUserDto } from './user.dto';
 
-export interface CreateUserMsg { dto: CreateUserDto; actorId: string }
-export interface FindUserByIdMsg { id: string }
-export interface UpdateUserMsg { id: string; data: UpdateUserDto; actor: JwtPayload }
-export interface UpdateRoleMsg { id: string; role: Role; actor: JwtPayload }
-export interface DeactivateUserMsg { id: string; actor: JwtPayload }
-export interface ChangePasswordMsg { actorId: string; dto: ChangePasswordDto }
+export interface CreateUserMsg { dto: CreateUserDto; actorId: number }
+export interface FindUserByIdMsg { id: number }
+export interface UpdateUserMsg { id: number; data: UpdateUserDto; actor: JwtPayload }
+export interface UpdateRoleMsg { id: number; roleCode: Role; actor: JwtPayload }
+export interface DeactivateUserMsg { id: number; actor: JwtPayload }
+export interface ChangePasswordMsg { actorId: number; dto: ChangePasswordDto }
 ```
 
 `user.types.ts` (kiểu trả về)
@@ -159,24 +169,25 @@ export interface ChangePasswordMsg { actorId: string; dto: ChangePasswordDto }
 import { Role } from '../../types/role';
 
 export interface UserView {
-  id: string;
+  id: number;
   username: string;
-  role: Role;
-  fullName: string;
-  email: string | null;
-  phone: string | null;
-  department: string | null;
+  email: string;
+  role: { id: number; code: Role; name: string };
   isActive: boolean;
+  fullname: string;
+  dob: string;
+  phone: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface LoginResult { accessToken: string; user: UserView }
+export interface LoginResult { accessToken: string; refreshToken: string; user: UserView }
+export interface RefreshTokenResult { accessToken: string; refreshToken: string }
 
 export interface UserStats {
   total: number;
   active: number;
-  byRole: Record<string, number>;
+  byRole: Record<number, number>;
 }
 ```
 
@@ -185,15 +196,15 @@ export interface UserStats {
 ```ts
 import { Role } from '../../types/role';
 
-export interface UserEventPayload { userId: string; username: string; role: Role }   // registered, created, deactivated
-export interface UserLoggedInPayload { userId: string; username: string }
+export interface UserEventPayload { userId: number; username: string; roleId: number }
+export interface UserLoggedInPayload { userId: number; username: string }
 export interface UserLoginFailedPayload {
   username: string;
   reason: 'USER_NOT_FOUND' | 'WRONG_PASSWORD' | 'INACTIVE';
 }
-export interface UserUpdatedPayload { userId: string; changedFields: string[] }
-export interface UserRoleChangedPayload { userId: string; oldRole: Role; newRole: Role }
-export interface UserPasswordChangedPayload { userId: string }
+export interface UserUpdatedPayload { userId: number; changedFields: string[] }
+export interface UserRoleChangedPayload { userId: number; oldRole: string; newRole: string }
+export interface UserPasswordChangedPayload { userId: number }
 ```
 
 `index.ts`
@@ -234,9 +245,10 @@ Tạo `apps/user-service/prisma/schema.prisma` chỉ với generator và datasou
 
 ```prisma
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/prisma/generated"
-  moduleFormat = "cjs"
+  provider        = "prisma-client"
+  output          = "../src/prisma/generated"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "cjs"
 }
 
 datasource db {
@@ -244,7 +256,7 @@ datasource db {
 }
 ```
 
-Model `User` và enum `Role` sẽ do bước 3.5 sinh ra từ database thật.
+Các model bảng hiện có (`users`, `roles`, `employees`, `departments`, ...) được pull ở bước 3.5; role là bảng quan hệ, không phải enum Prisma.
 
 ### 3.2 Config: `apps/user-service/prisma.config.ts`
 
@@ -259,11 +271,11 @@ dotenv.config({ path: resolve(process.cwd(), 'apps/user-service/.env') });
 export default defineConfig({
   schema: 'prisma/schema.prisma',          // tương đối so với file config này
   migrations: { path: 'prisma/migrations' },
-  datasource: { url: env('DIRECT_URL') }, // CLI dùng kết nối direct của Neon
+  datasource: { url: env('DATABASE_URL') },
 });
 ```
 
-Nếu Prisma báo không tìm thấy schema, đổi hai đường dẫn trên sang tuyệt đối bằng `resolve(process.cwd(), 'apps/user-service/prisma/...')`.
+Prisma CLI hiện cũng dùng `DATABASE_URL`; không cần `DIRECT_URL` riêng trong cấu hình hiện tại.
 
 ### 3.3 Scripts trong `package.json` (gốc)
 
@@ -283,12 +295,12 @@ Không có script `migrate`/`deploy`: schema do database quyết định, servic
 Tạo `apps/user-service/.env.example` (commit) rồi copy thành `.env` (không commit):
 
 ```env
-# Pooled (host có -pooler) – dùng lúc chạy
+# URL kết nối Neon – dùng lúc chạy và cho Prisma CLI
 DATABASE_URL=postgresql://<user>:<pass>@<host>-pooler.<region>.aws.neon.tech/user_db?sslmode=require
-# Direct – dùng cho prisma db pull
-DIRECT_URL=postgresql://<user>:<pass>@<host>.<region>.aws.neon.tech/user_db?sslmode=require
 
-JWT_EXPIRES_IN=1d
+JWT_EXPIRES_IN=6h
+JWT_REFRESH_SECRET=<refresh-secret>
+JWT_REFRESH_EXPIRES_IN=1d
 ```
 
 ### 3.5 Pull schema từ Neon
@@ -297,21 +309,28 @@ JWT_EXPIRES_IN=1d
 npm run prisma:pull:user
 ```
 
-Lệnh này đọc cấu trúc bảng trong `user_db` và ghi `model`/`enum` vào `schema.prisma` (giữ nguyên generator và datasource). Sau đó **chỉnh tay một lần** để khớp với code trong hướng dẫn:
+Lệnh này đọc cấu trúc bảng trong `user_db` và ghi model vào `schema.prisma` (giữ nguyên generator và datasource). **Giữ nguyên tên Prisma model/field được pull**: schema hiện tại dùng model chữ thường/số nhiều và field snake_case, khớp trực tiếp với các bảng/cột hiện có; không đổi thành `User`, `passwordHash` hay thêm `@map` không cần thiết.
 
-1. Đổi tên model về `User`, field về camelCase, giữ tên bảng/cột thật bằng `@@map`/`@map`. Ví dụ bảng `users` có cột `password_hash` sẽ thành:
+Các tên và kiểu dữ liệu chính đang dùng:
 
-   ```prisma
-   model User {
-     id           String   @id @default(uuid())
-     username     String   @unique
-     passwordHash String   @map("password_hash")
-     // ... các field còn lại
-     @@map("users")
-   }
-   ```
+| Bảng / model Prisma | Cột / field | Kiểu |
+|---|---|---|
+| `users` | `id` | `Int` (autoincrement) |
+| `users` | `username` | `String`, unique, tối đa 20 ký tự |
+| `users` | `hashed_password` | `String`, bcrypt hash |
+| `users` | `email` | `String`, unique |
+| `users` | `role_id` | `Int`, FK tới `roles.id` |
+| `users` | `is_active` | `Boolean` |
+| `users` | `fullname` | `String?` |
+| `users` | `dob` | `DateTime` với database type `DATE` |
+| `users` | `phone` | `String?` |
+| `roles` | `id`, `name`, `code` | `Int`, `String`, `String` (`code` unique) |
+| `employees` | `id`, `user_id`, `department_id` | `Int`, `Int`, `Int` |
+| `departments` | `id`, `name`, `code` | `Int`, `String`, `String` (`code` unique) |
+| `expertises` | `id`, `code`, `name` | `Int`, `String`, `String?` |
+| `technician_expertise` | `user_id`, `expertise_id` | `Int`, composite primary key |
 
-2. Code ở mục 6 và 7 giả định model `User` có các field: `id`, `username`, `passwordHash`, `role`, `fullName`, `email`, `phone`, `department`, `isActive`, `createdAt`, `updatedAt`. **Nếu schema thật khác** (tên field khác, thiếu/thừa field), sửa `user.mapper.ts`, `users.service.ts`, `auth.service.ts` và `UserView` trong `libs/shared/.../user.types.ts` cho khớp, đừng đổi database.
+`users.roles` là relation tới `roles`; role không phải enum trong database. Prisma Client được dùng với tên chính xác như `prisma.users`, `user.hashed_password`, `user.role_id` và `user.roles`.
 
 Rồi sinh client:
 
@@ -323,16 +342,16 @@ Kiểm tra trước khi viết tiếp code:
 
 | Cần kiểm tra | Nếu không khớp |
 |---|---|
-| Kiểu `id` là `uuid`/`String` | Nếu là `Int`/`BigInt`: đổi `id: string` thành `number` trong contract, bỏ `ParseUUIDPipe` (dùng `ParseIntPipe`) ở gateway. |
-| `role` là enum với 4 giá trị `ADMIN, MANAGER, TECHNICIAN, EMPLOYEE` | Nếu là `varchar` hoặc giá trị khác: sửa `libs/shared/src/types/role.ts` cho khớp dữ liệu thật. |
+| `users.id` và các foreign key là `Int` | Contract, JWT, route params và `actorId` dùng `number`; gateway dùng `ParseIntPipe`. |
+| `roles.code` có các giá trị `ADMIN, MANAGER, TECHNICIAN, EMPLOYEE` | `Role` trong shared là union string; tra cứu role qua `roles.code`, không dùng enum Prisma `Role`. |
 | Mật khẩu đã lưu dạng bcrypt (bắt đầu bằng `$2a$`/`$2b$`) | Nếu là plaintext hoặc thuật toán khác thì đăng nhập sẽ luôn thất bại; cần băm lại dữ liệu hoặc đổi thuật toán trong `AuthService`/`UsersService`. |
-| Có cột `isActive` (hoặc tương đương) | Nếu không có: bỏ kiểm tra `isActive` và hàm `deactivate`, hoặc đổi sang cột trạng thái thật. |
+| Cột tài khoản là `is_active` | Dùng field Prisma `is_active`; response ánh xạ thành `isActive`. |
 | `username`/`email` có ràng buộc unique | Nếu không có, `findUnique({ where: { username } })` sẽ lỗi; đổi sang `findFirst`. |
 
 Lưu ý:
 
 - **Không chạy `prisma migrate dev`** trên database đã có dữ liệu (Prisma sẽ đòi reset). Muốn quản lý bằng migration về sau thì phải baseline trước, đó là việc của bước khác.
-- Chạy lại `db pull` sẽ ghi đè các chỉnh tay ở trên; chỉ pull lại khi cấu trúc bảng thay đổi, rồi áp lại các `@map`.
+- Chạy lại `db pull` sẽ ghi đè mọi chỉnh sửa schema; chỉ pull lại khi cấu trúc bảng thay đổi.
 - Thư mục `prisma/migrations/` và dòng `migrations` trong `prisma.config.ts` không dùng đến, có thể xóa dòng đó đi.
 
 ---
@@ -407,7 +426,7 @@ import { UserEventsPublisher } from './user-events.publisher';
 export class MessagingModule {}
 ```
 
-`src/messaging/user-events.publisher.ts`
+`src/messaging/publishers/user-events.publisher.ts`
 
 ```ts
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
@@ -415,7 +434,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   buildEvent, BUS_CLIENT, SERVICES, USER_EVT, UserEventPayload, UserLoggedInPayload,
   UserLoginFailedPayload, UserPasswordChangedPayload, UserRoleChangedPayload,
-  UserUpdatedPayload, UserView, Role,
+  UserUpdatedPayload, UserView,
 } from '@app/shared';
 
 @Injectable()
@@ -428,11 +447,10 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
     await this.bus.connect(); // lỗi kết nối RabbitMQ hiện ngay lúc khởi động
   }
 
-  registered(u: UserView) {
-    this.publish<UserEventPayload>(USER_EVT.REGISTERED, { userId: u.id, username: u.username, role: u.role }, u.id);
-  }
-  created(u: UserView, actorId?: string) {
-    this.publish<UserEventPayload>(USER_EVT.CREATED, { userId: u.id, username: u.username, role: u.role }, actorId);
+  created(u: UserView, actorId: number) {
+    this.publish<UserEventPayload>(USER_EVT.CREATED, {
+      userId: u.id, username: u.username, roleId: u.role.id,
+    }, actorId);
   }
   loggedIn(u: UserView) {
     this.publish<UserLoggedInPayload>(USER_EVT.LOGGED_IN, { userId: u.id, username: u.username }, u.id);
@@ -440,20 +458,22 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
   loginFailed(payload: UserLoginFailedPayload) {
     this.publish(USER_EVT.LOGIN_FAILED, payload);
   }
-  updated(userId: string, changedFields: string[], actorId: string) {
+  updated(userId: number, changedFields: string[], actorId: number) {
     this.publish<UserUpdatedPayload>(USER_EVT.UPDATED, { userId, changedFields }, actorId);
   }
-  roleChanged(userId: string, oldRole: Role, newRole: Role, actorId: string) {
+  roleChanged(userId: number, oldRole: string, newRole: string, actorId: number) {
     this.publish<UserRoleChangedPayload>(USER_EVT.ROLE_CHANGED, { userId, oldRole, newRole }, actorId);
   }
-  passwordChanged(userId: string) {
+  passwordChanged(userId: number) {
     this.publish<UserPasswordChangedPayload>(USER_EVT.PASSWORD_CHANGED, { userId }, userId);
   }
-  deactivated(u: UserView, actorId: string) {
-    this.publish<UserEventPayload>(USER_EVT.DEACTIVATED, { userId: u.id, username: u.username, role: u.role }, actorId);
+  deactivated(u: UserView, actorId: number) {
+    this.publish<UserEventPayload>(USER_EVT.DEACTIVATED, {
+      userId: u.id, username: u.username, roleId: u.role.id,
+    }, actorId);
   }
 
-  private publish<T>(type: string, data: T, actorId?: string) {
+  private publish<T>(type: string, data: T, actorId?: number) {
     const event = buildEvent({ type, source: SERVICES.USER, data, actorId });
     // emit() là fire-and-forget; subscribe chỉ để ghi log khi gửi lỗi, không làm hỏng request chính
     this.bus.emit(type, event).subscribe({
@@ -467,24 +487,29 @@ export class UserEventsPublisher implements OnApplicationBootstrap {
 
 ## 6. Users module
 
-`src/modules/users/user.mapper.ts` (luôn đi qua hàm này để **không bao giờ lộ `passwordHash`**)
+`src/modules/views.mapper.ts` (response dùng `UserView`; password hash không được trả ra)
 
 ```ts
 import type { UserView } from '@app/shared';
-import type { User } from '../../prisma/generated/client';
+import type { users, roles } from '../../prisma/generated/client';
+import type { Role } from '@app/shared/types/role';
 
-export function toUserView(user: User): UserView {
+export function toUserView(user: users & { roles: roles }): UserView {
   return {
     id: user.id,
     username: user.username,
-    role: user.role,
-    fullName: user.fullName,
+    role: {
+      id: user.roles.id,
+      code: user.roles.code as Role,
+      name: user.roles.name,
+    },
     email: user.email,
-    phone: user.phone,
-    department: user.department,
-    isActive: user.isActive,
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
+    isActive: user.is_active,
+    fullname: user.fullname || 'No name',
+    dob: user.dob.toDateString(),
+    phone: user.phone?.toString() || 'Missing',
+    createdAt: user.created_at?.toISOString() || 'Missing',
+    updatedAt: user.updated_at?.toISOString() || 'Missing',
   };
 }
 ```
@@ -497,13 +522,13 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import {
-  CreateUserMsg, DeactivateUserMsg, FindUsersQueryDto, Paginated, RegisterDto, Role,
-  UpdateRoleMsg, UpdateUserMsg, UserStats, UserView,
+  CreateUserMsg, DeactivateUserMsg, FindUserQueryDto, Paginated, CreateUserDto, Role,
+  UpdateRoleMsg, UpdateUserMsg, UserStats, UserView, myParseDate,
 } from '@app/shared';
-import { UserEventsPublisher } from '../../messaging/user-events.publisher';
+import { UserEventsPublisher } from '../../messaging/publishers/user-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { toUserView } from './user.mapper';
+import { toUserView } from '../views.mapper';
 
 @Injectable()
 export class UsersService {
@@ -513,123 +538,136 @@ export class UsersService {
   ) {}
 
   // ---------- dùng nội bộ (AuthService) ----------
-  findEntityByUsername(username: string) {
-    return this.prisma.user.findUnique({ where: { username } });
+  findUserByUserName(username: string) {
+    return this.prisma.users.findUnique({ where: { username }, include: { roles: true } });
   }
 
-  findEntityById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+  findUserById(id: number) {
+    return this.prisma.users.findUnique({ where: { id }, include: { roles: true } });
   }
 
-  setPassword(id: string, passwordHash: string) {
-    return this.prisma.user.update({ where: { id }, data: { passwordHash } });
+  setPassword(id: number, hashedPassword: string) {
+    return this.prisma.users.update({ where: { id }, data: { hashed_password: hashedPassword } });
   }
 
-  /** Tạo user, KHÔNG phát sự kiện (caller quyết định phát registered hay created). */
-  async createUser(dto: RegisterDto, role: Role): Promise<UserView> {
+  async createUser(dto: CreateUserDto): Promise<UserView> {
     const username = dto.username.toLowerCase();
-    const email = dto.email?.toLowerCase();
+    const email = dto.email.toLowerCase();
+    const role = await this.resolveRole(dto.roleCode);
 
-    if (await this.prisma.user.findUnique({ where: { username } })) {
-      throw new ConflictException('Tên đăng nhập đã tồn tại');
+    if (await this.prisma.users.findUnique({ where: { username } })) {
+      throw new ConflictException('Username exsisted');
     }
-    if (email) await this.assertEmailFree(email);
+    if (await this.prisma.users.findUnique({ where: { email } })) {
+      throw new ConflictException('Email has been used');
+    }
 
-    const user = await this.prisma.user.create({
+    const user = await this.prisma.users.create({
       data: {
         username,
-        passwordHash: await bcrypt.hash(dto.password, 10),
-        fullName: dto.fullName,
+        hashed_password: await bcrypt.hash(dto.password, 12),
         email,
+        role_id: role.id,
+        fullname: dto.fullname,
+        dob: new Date(dto.dob),
         phone: dto.phone,
-        department: dto.department,
-        role,
       },
+      include: { roles: true },
     });
     return toUserView(user);
   }
 
   // ---------- RPC handlers ----------
   async create({ dto, actorId }: CreateUserMsg): Promise<UserView> {
-    const user = await this.createUser(dto, dto.role);
+    const user = await this.createUser(dto);
     this.events.created(user, actorId);
     return user;
   }
 
-  async findAll(q: FindUsersQueryDto): Promise<Paginated<UserView>> {
+  async findAll(q: FindUserQueryDto): Promise<Paginated<UserView>> {
     const page = q.page ?? 1;
     const limit = q.limit ?? 20;
-    const where: Prisma.UserWhereInput = {
-      ...(q.role && { role: q.role }),
+    const role = q.roleCode ? await this.resolveRole(q.roleCode) : undefined;
+    const where: Prisma.usersWhereInput = {
+      ...(role && { role_id: role.id }),
       ...(q.search && {
         OR: [
           { username: { contains: q.search, mode: 'insensitive' } },
-          { fullName: { contains: q.search, mode: 'insensitive' } },
+          { fullname: { contains: q.search, mode: 'insensitive' } },
           { email: { contains: q.search, mode: 'insensitive' } },
         ],
       }),
     };
 
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.user.findMany({
+      this.prisma.users.findMany({
         where,
+        include: { roles: true },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { username: 'asc' },
       }),
-      this.prisma.user.count({ where }),
+      this.prisma.users.count({ where }),
     ]);
     return { items: items.map(toUserView), total, page, limit };
   }
 
-  async findById(id: string): Promise<UserView> {
-    const user = await this.findEntityById(id);
+  async findById(id: number): Promise<UserView> {
+    const user = await this.findUserById(id);
     if (!user) throw new NotFoundException('Không tìm thấy người dùng');
     return toUserView(user);
   }
 
   async update({ id, data, actor }: UpdateUserMsg): Promise<UserView> {
-    if (actor.role !== Role.ADMIN && actor.sub !== id) {
-      throw new ForbiddenException('Bạn không có quyền sửa người dùng này');
-    }
-    await this.findById(id); // 404 nếu không tồn tại
-
-    const email = data.email?.toLowerCase();
-    if (email) await this.assertEmailFree(email, id);
+    const user = await this.findById(id);
+    if (actor.sub !== user.id) throw new ForbiddenException('You can only update your data');
 
     const patch = {
-      fullName: data.fullName,
-      email,
+      fullname: data.fullname,
       phone: data.phone,
-      department: data.department,
+      dob: myParseDate(data.dob, 'dob'),
     };
     const changedFields = Object.entries(patch)
       .filter(([, v]) => v !== undefined)
       .map(([k]) => k);
 
-    const user = await this.prisma.user.update({ where: { id }, data: patch });
-    if (changedFields.length) this.events.updated(id, changedFields, actor.sub);
-    return toUserView(user);
+    if (!changedFields.length) return user;
+    const updated = await this.prisma.users.update({
+      where: { id: user.id },
+      data: patch,
+      include: { roles: true },
+    });
+    this.events.updated(id, changedFields, actor.sub);
+    return toUserView(updated);
   }
 
-  async updateRole({ id, role, actor }: UpdateRoleMsg): Promise<UserView> {
-    if (actor.role !== Role.ADMIN) throw new ForbiddenException('Chỉ ADMIN được đổi vai trò');
+  async updateRole({ id, roleCode, actor }: UpdateRoleMsg): Promise<UserView> {
+    if (actor.roleCode !== Role.ADMIN) throw new ForbiddenException('ADMIN only');
     if (actor.sub === id) throw new ForbiddenException('Không thể tự đổi vai trò của chính mình');
 
-    const current = await this.findEntityById(id);
+    const current = await this.findUserById(id);
     if (!current) throw new NotFoundException('Không tìm thấy người dùng');
+    const role = await this.resolveRole(roleCode);
 
-    const user = await this.prisma.user.update({ where: { id }, data: { role } });
-    if (current.role !== role) this.events.roleChanged(id, current.role, role, actor.sub);
+    const user = await this.prisma.users.update({
+      where: { id },
+      data: { role_id: role.id },
+      include: { roles: true },
+    });
+    if (current.role_id !== role.id) this.events.roleChanged(id, current.roles.code, role.code, actor.sub);
     return toUserView(user);
   }
 
   async deactivate({ id, actor }: DeactivateUserMsg): Promise<UserView> {
-    if (actor.role !== Role.ADMIN) throw new ForbiddenException('Chỉ ADMIN được vô hiệu hóa tài khoản');
+    if (actor.roleCode !== Role.ADMIN) throw new ForbiddenException('ADMIN only');
     if (actor.sub === id) throw new ForbiddenException('Không thể tự vô hiệu hóa chính mình');
     await this.findById(id);
 
-    const user = await this.prisma.user.update({ where: { id }, data: { isActive: false } });
+    const user = await this.prisma.users.update({
+      where: { id },
+      data: { is_active: false },
+      include: { roles: true },
+    });
     const view = toUserView(user);
     this.events.deactivated(view, actor.sub);
     return view;
@@ -637,20 +675,21 @@ export class UsersService {
 
   async stats(): Promise<UserStats> {
     const [total, active, groups] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { isActive: true } }),
-      this.prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
+      this.prisma.users.count(),
+      this.prisma.users.count({ where: { is_active: true } }),
+      this.prisma.users.groupBy({ by: ['role_id'], _count: { _all: true } }),
     ]);
     return {
       total,
       active,
-      byRole: Object.fromEntries(groups.map((g) => [g.role, g._count._all])),
+      byRole: Object.fromEntries(groups.map((g) => [g.role_id, g._count._all])),
     };
   }
 
-  private async assertEmailFree(email: string, excludeId?: string) {
-    const found = await this.prisma.user.findUnique({ where: { email } });
-    if (found && found.id !== excludeId) throw new ConflictException('Email đã được sử dụng');
+  async resolveRole(roleCode: Role) {
+    const role = await this.prisma.roles.findUnique({ where: { code: roleCode } });
+    if (!role) throw new NotFoundException('Role not found');
+    return role;
   }
 }
 ```
@@ -661,7 +700,7 @@ export class UsersService {
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
-  CreateUserMsg, DeactivateUserMsg, FindUserByIdMsg, FindUsersQueryDto,
+  CreateUserMsg, DeactivateUserMsg, FindUserByIdMsg, FindUserQueryDto,
   UpdateRoleMsg, UpdateUserMsg, USER_CMD,
 } from '@app/shared';
 import { UsersService } from './users.service';
@@ -676,7 +715,7 @@ export class UsersController {
   }
 
   @MessagePattern(USER_CMD.FIND_ALL)
-  findAll(@Payload() query: FindUsersQueryDto) {
+  findAll(@Payload() query: FindUserQueryDto) {
     return this.users.findAll(query);
   }
 
@@ -732,58 +771,108 @@ export class UsersModule {}
 import {
   ForbiddenException, Injectable, UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import {
-  ChangePasswordMsg, JwtPayload, LoginDto, LoginResult, RegisterDto, Role, UserView,
+  ChangePasswordMsg, JwtPayload, LoginDto, LoginResult, RefreshTokenDto,
+  RefreshTokenResult, Role,
 } from '@app/shared';
-import { UserEventsPublisher } from '../../messaging/user-events.publisher';
-import { toUserView } from '../users/user.mapper';
+import { UserEventsPublisher } from '../../messaging/publishers/user-events.publisher';
+import { toUserView } from '../views.mapper';
 import { UsersService } from '../users/users.service';
+import { EmployeesService } from '../employees/employees.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly users: UsersService,
+    private readonly employees: EmployeesService,
     private readonly jwt: JwtService,
     private readonly events: UserEventsPublisher,
+    private readonly config: ConfigService,
   ) {}
-
-  async register(dto: RegisterDto): Promise<UserView> {
-    const user = await this.users.createUser(dto, Role.EMPLOYEE); // tự đăng ký luôn là EMPLOYEE
-    this.events.registered(user);
-    return user;
-  }
 
   async login(dto: LoginDto): Promise<LoginResult> {
     const username = dto.username.toLowerCase();
-    const user = await this.users.findEntityByUsername(username);
-    const passwordOk = user ? await bcrypt.compare(dto.password, user.passwordHash) : false;
+    const user = await this.users.findUserByUserName(username);
+    const passwordOk = user ? await bcrypt.compare(dto.password, user.hashed_password) : false;
 
     if (!user || !passwordOk) {
       this.events.loginFailed({ username, reason: user ? 'WRONG_PASSWORD' : 'USER_NOT_FOUND' });
-      throw new UnauthorizedException('Sai tên đăng nhập hoặc mật khẩu');
+      throw new UnauthorizedException('Wrong username or password');
     }
-    if (!user.isActive) {
+    if (!user.is_active) {
       this.events.loginFailed({ username, reason: 'INACTIVE' });
-      throw new ForbiddenException('Tài khoản đã bị vô hiệu hóa');
+      throw new ForbiddenException('Account has been deactivated');
     }
 
-    const payload: JwtPayload = { sub: user.id, username: user.username, role: user.role };
-    const accessToken = await this.jwt.signAsync(payload);
+    const employee = await this.employees.findEmployeeByUserId(user.id);
+    if (!employee) throw new UnauthorizedException('User is not permitted to access');
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      username: user.username,
+      roleId: user.role_id,
+      roleCode: user.roles.code as Role,
+      employeeId: employee.id,
+    };
+    const { accessToken, refreshToken } = await this.generateTokens(payload);
     const view = toUserView(user);
     this.events.loggedIn(view);
-    return { accessToken, user: view };
+    return { accessToken, refreshToken, user: view };
+  }
+
+  async refreshToken(dto: RefreshTokenDto): Promise<RefreshTokenResult> {
+    let payload: JwtPayload;
+    try {
+      payload = await this.jwt.verifyAsync<JwtPayload>(dto.refreshToken, {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+    if (payload.tokenType !== 'refresh') throw new UnauthorizedException('Invalid refresh token');
+
+    const user = await this.users.findUserById(payload.sub);
+    if (!user || !user.is_active) throw new UnauthorizedException('User is inactive or no longer exists');
+    const employee = await this.employees.findEmployeeByUserId(user.id);
+    if (!employee) throw new UnauthorizedException('User is not permitted to access');
+    return this.generateTokens({
+      sub: user.id,
+      username: user.username,
+      roleId: user.role_id,
+      roleCode: user.roles.code as Role,
+      employeeId: employee.id,
+    });
+  }
+
+  private async generateTokens(payload: JwtPayload): Promise<RefreshTokenResult> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwt.signAsync({ ...payload, tokenType: 'access' }),
+      this.jwt.signAsync(
+        { ...payload, tokenType: 'refresh' },
+        {
+          secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '1d') as JwtSignOptions['expiresIn'],
+        },
+      ),
+    ]);
+    return { accessToken, refreshToken };
   }
 
   async changePassword({ actorId, dto }: ChangePasswordMsg) {
-    const user = await this.users.findEntityById(actorId);
-    if (!user || !(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
-      throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
+    const user = await this.users.findUserById(actorId);
+    if (!user || !(await bcrypt.compare(dto.currentPassword, user.hashed_password))) {
+      throw new UnauthorizedException('Wrong current password');
     }
-    await this.users.setPassword(actorId, await bcrypt.hash(dto.newPassword, 10));
+    await this.users.setPassword(actorId, await bcrypt.hash(dto.newPassword, 12));
     this.events.passwordChanged(actorId);
-    return { message: 'Đổi mật khẩu thành công' };
+    return { message: 'Password changed successfully' };
+  }
+
+  async forgetPassword({ actorId, dto }: any) {
+    return { message: 'Password reset successfully' };
   }
 }
 ```
@@ -793,26 +882,31 @@ export class AuthService {
 ```ts
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ChangePasswordMsg, LoginDto, RegisterDto, USER_CMD } from '@app/shared';
+import { ChangePasswordMsg, LoginDto, RefreshTokenDto, USER_CMD } from '@app/shared';
 import { AuthService } from './auth.service';
 
 @Controller()
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @MessagePattern(USER_CMD.REGISTER)
-  register(@Payload() dto: RegisterDto) {
-    return this.auth.register(dto);
-  }
-
   @MessagePattern(USER_CMD.LOGIN)
   login(@Payload() dto: LoginDto) {
     return this.auth.login(dto);
   }
 
+  @MessagePattern(USER_CMD.REFRESH_TOKEN)
+  refreshToken(@Payload() dto: RefreshTokenDto) {
+    return this.auth.refreshToken(dto);
+  }
+
   @MessagePattern(USER_CMD.CHANGE_PASSWORD)
   changePassword(@Payload() msg: ChangePasswordMsg) {
     return this.auth.changePassword(msg);
+  }
+
+  @MessagePattern(USER_CMD.FORGET_PASSWORD)
+  forgetPassword(@Payload() msg: any) {
+    return this.auth.forgetPassword(msg);
   }
 }
 ```
@@ -823,6 +917,7 @@ export class AuthController {
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
+import { EmployeesModule } from '../employees/employees.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -830,12 +925,13 @@ import { AuthService } from './auth.service';
 @Module({
   imports: [
     UsersModule,
+    EmployeesModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN', '1d') as JwtSignOptions['expiresIn'],
+          expiresIn: config.get<string>('JWT_EXPIRES_IN', '6h') as JwtSignOptions['expiresIn'],
         },
       }),
     }),
@@ -939,9 +1035,9 @@ Trong container, `.env` không được copy; biến môi trường đến từ 
 ## 11. Lưu ý và hạn chế đã biết
 
 - **Token vẫn dùng được đến lúc hết hạn** dù tài khoản đã bị vô hiệu hóa hoặc đổi role, vì gateway chỉ xác minh chữ ký. Giữ `JWT_EXPIRES_IN` ngắn (ví dụ `1h`) nếu quan trọng. Thu hồi tức thời cần thêm cơ chế riêng (làm sau, không phải bây giờ).
-- Validate input từ bên ngoài ở **gateway**. Service chỉ validate lại các payload là class DTO (`RegisterDto`, `LoginDto`, `FindUsersQueryDto`); các payload dạng interface (`UpdateUserMsg`...) được tin cậy vì chỉ gateway gửi tới.
+- Validate input từ bên ngoài ở **gateway**. Service chỉ validate lại các payload là class DTO (`CreateUserDto`, `LoginDto`, `RefreshTokenDto`, `FindUserQueryDto`); các payload dạng interface (`UpdateUserMsg`...) được tin cậy vì chỉ gateway gửi tới.
 - Lỗi nghiệp vụ cứ `throw new NotFoundException(...)`, `ConflictException`, `ForbiddenException`...; `RpcErrorFilter` chuyển thành `{statusCode, message}` và gateway đổi lại thành HTTP status tương ứng.
-- Đừng đưa `passwordHash` vào bất kỳ event hay response nào; luôn qua `toUserView`.
+- Đừng đưa `hashed_password` vào bất kỳ event hay response nào; luôn qua `toUserView`.
 
 ---
 
@@ -979,7 +1075,7 @@ Giả sử dựng `device-service`:
 1. `libs/shared/src/contracts/device/`: `device.patterns.ts` có patterns riêng theo domain (`DEVICE_CMD`/`DEVICE_EVT`, `ASSIGN_DEVICE_CMD`/`ASSIGN_DEVICE_EVT`, `RETRIEVE_DEVICE_CMD`/`RETRIEVE_DEVICE_EVT`, `HANDOVER_DEVICE_CMD`/`HANDOVER_DEVICE_EVT`, `DISPOSE_DEVICE_CMD`/`DISPOSE_DEVICE_EVT`, `DEVICE_EMPLOYEE_CMD`/`DEVICE_EMPLOYEE_EVT`); cùng `device.dto.ts`, `device.messages.ts`, `device.types.ts`, `device.events.ts`, `index.ts`. Bỏ comment export trong `libs/shared/src/index.ts`. Nhớ có `DEVICE_CMD.STATS` nếu report cần số liệu.
 2. `apps/device-service/prisma/schema.prisma` (generator giống hệt, đổi model), `prisma.config.ts` (đổi đường dẫn `.env`).
 3. Thêm các script `prisma:*:device` (pull/generate/studio, hoặc migrate nếu DB trống) và `start:device` trong `package.json`.
-4. Dùng database `device_db` trên Neon (đã có sẵn hoặc tạo mới), điền `apps/device-service/.env` (`DATABASE_URL`, `DIRECT_URL`), tạo `.env.example`.
+4. Dùng database `device_db` trên Neon (đã có sẵn hoặc tạo mới), điền `apps/device-service/.env` (`DATABASE_URL`), tạo `.env.example`.
 5. Nếu DB đã có bảng: `prisma db pull` rồi chỉnh tên model/field và `prisma generate`. Nếu DB trống và muốn tạo từ schema tự viết: dùng `prisma migrate dev --name init`.
 6. Chép nguyên `src/prisma/` (không sửa gì).
 7. `src/messaging/`: đăng ký publisher riêng theo domain trong `messaging.module.ts` (ví dụ `device-events.publisher.ts`, `assign-devices-events.publisher.ts`); thêm `consumers/*.ts` cho sự kiện cần nhận.

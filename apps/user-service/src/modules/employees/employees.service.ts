@@ -9,6 +9,7 @@ import {
     Role,
     FindEmployeeQueryDto,
     Paginated,
+    myParseDate,
 } from '@app/shared';
 import { EmployeeEventsPublisher } from '../../messaging/publishers/employee-events.publisher';
 import { Prisma } from "../../prisma/generated/client";
@@ -20,7 +21,7 @@ import { toEmployeeView, toUserView } from "../views.mapper";
 export class EmployeesService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly usersServise: UsersService,
+        private readonly usersService: UsersService,
         private readonly events: EmployeeEventsPublisher,
     ) {}
 
@@ -52,8 +53,7 @@ export class EmployeesService {
         user: UserView,
         employee: EmployeeView,
     }> {
-        const user = await this.usersServise.findById(dto.userId);
-        // đã có throw exception
+        const user = await this.usersService.findById(dto.userId);
         const department = await this.prisma.departments.findUnique({ where: { id: dto.departmentId }});
         if (!department) throw new NotFoundException('Department not found');
         
@@ -71,8 +71,8 @@ export class EmployeesService {
                 user_id: user.id,
                 department_id: department.id,
                 position: dto.position,
-                start_date: dto.startDate,
-                end_date: dto.endDate,
+                start_date: myParseDate(dto.startDate, 'startDate') || new Date(),
+                end_date: myParseDate(dto.endDate, 'endDate'),
             },
             include: { departments: true },
         });
@@ -103,11 +103,11 @@ export class EmployeesService {
        
         const employee = await this.prisma.employees.update({
             where: { id },
-            data: { end_date: data.endDate },
+            data: { end_date: myParseDate(data.endDate, 'endDate') || new Date() },
             include: { departments: true },
         });
         const view = toEmployeeView(employee);
-        const user = await this.usersServise.findById(employee.user_id);
+        const user = await this.usersService.findById(employee.user_id);
         
         this.events.ended(view, actor.sub);
         return {
@@ -122,10 +122,7 @@ export class EmployeesService {
         user: UserView,
         employee: EmployeeView,
     }>> {
-        const { 
-            page = 1, 
-            limit = 20 
-        } = q;
+        const { page = 1, limit = 20 } = q;
         const where: Prisma.employeesWhereInput = {
             end_date: null,
             ...(q.search && {
@@ -179,8 +176,7 @@ export class EmployeesService {
         employee: EmployeeView,
     }> {
         const employee = await this.findEmployeeByUserId(userId);
-        if (!employee)
-            throw new NotFoundException('This user is currently not an employee');
+        if (!employee) throw new NotFoundException('This user is currently not an employee');
         return {
             user: toUserView(employee.users),
             employee: toEmployeeView(employee),
@@ -188,14 +184,10 @@ export class EmployeesService {
     }
 
     async getHistory(q: FindEmployeeQueryDto): Promise<Paginated<EmployeeView>> {
-        const {
-            page = 1,
-            limit = 20,
-        } = q;
+        const { page = 1, limit = 20 } = q;
         if (!q.userId) throw new BadRequestException('User id missing');
-        const user = await this.usersServise.findById(q.userId);
         const where: Prisma.employeesWhereInput = {
-            user_id: user.id
+            user_id: q.userId
         };
 
         const [total, history] = await this.prisma.$transaction([

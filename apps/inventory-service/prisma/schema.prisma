@@ -1,0 +1,153 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/prisma/generated"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model batches {
+  id                 Int                  @id @default(autoincrement())
+  creator_id         Int
+  item_id            Int
+  quantity           Int                  @default(1)
+  remain_quantity    Int
+  unit_price         Decimal?             @db.Decimal(18, 2)
+  total_price        Decimal?             @db.Decimal(18, 2)
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  import_date        DateTime             @db.Date
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  items              items                @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usage_item_details usage_item_details[]
+
+  @@index([item_id, remain_quantity, import_date], map: "idx_batches_fifo")
+}
+
+model items {
+  id                                     Int             @id @default(autoincrement())
+  manufacturer_id                        Int
+  supplier_id                            Int
+  name                                   String?         @db.VarChar(100)
+  code                                   String          @unique @db.VarChar(20)
+  unit                                   String?         @db.VarChar(20)
+  description                            String?
+  stock                                  Int             @default(0)
+  minimum_stock                          Int             @default(0)
+  created_at                             DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at                             DateTime?       @default(now()) @db.Timestamptz(6)
+  batches                                batches[]
+  item_images                            item_images[]
+  sources_items_manufacturer_idTosources sources         @relation("items_manufacturer_idTosources", fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sources_items_supplier_idTosources     sources         @relation("items_supplier_idTosources", fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  require_items                          require_items[]
+
+  @@index([manufacturer_id], map: "idx_items_manufacturer_id")
+  @@index([stock, minimum_stock], map: "idx_items_stock_minimum")
+  @@index([supplier_id], map: "idx_items_supplier_id")
+}
+
+model outbox_events {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_type    String        @db.VarChar(100)
+  resource      String        @db.VarChar(100)
+  record_id     Int
+  payload       Json
+  status        event_status? @default(pending)
+  retry_count   Int           @default(0)
+  occurred_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  published_at  DateTime?     @db.Timestamptz(6)
+  next_retry_at DateTime?     @db.Timestamptz(6)
+  last_error    String?
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+
+  @@index([status, next_retry_at], map: "idx_outbox_events_pending", where: raw("(status = 'pending'::event_status)"))
+}
+
+model require_items {
+  id           Int       @id @default(autoincrement())
+  item_id      Int?
+  creator_id   Int
+  confirmer_id Int?
+  is_confirmed Boolean   @default(false)
+  reason       String?
+  requires     String?
+  quantity     Int       @default(1)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  is_fulfilled Boolean   @default(false)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  items        items?    @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([item_id, is_confirmed], map: "idx_require_items_item_confirmed")
+}
+
+model sources {
+  id                                   Int         @id @default(autoincrement())
+  name                                 String      @db.VarChar(100)
+  type                                 source_type
+  created_at                           DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at                           DateTime?   @default(now()) @db.Timestamptz(6)
+  code                                 String      @unique @db.VarChar(20)
+  items_items_manufacturer_idTosources items[]     @relation("items_manufacturer_idTosources")
+  items_items_supplier_idTosources     items[]     @relation("items_supplier_idTosources")
+}
+
+model usage_item_details {
+  id               Int              @id @default(autoincrement())
+  list_id          Int
+  batch_id         Int
+  take_quantity    Int              @default(1)
+  used_quantity    Int?
+  updated_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  batches          batches          @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usage_item_lists usage_item_lists @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([list_id, batch_id], map: "ug_usage_item_detail_list_batch")
+  @@index([batch_id], map: "idx_usage_item_details_batch_id")
+  @@index([list_id], map: "idx_usage_item_details_list_id")
+}
+
+model usage_item_lists {
+  id                 Int                  @id @default(autoincrement())
+  creator_id         Int
+  task_id            Int
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  is_blocked         Boolean              @default(false)
+  usage_item_details usage_item_details[]
+
+  @@unique([task_id, creator_id], map: "uq_usage_item_lists_task_creator")
+  @@index([task_id], map: "idx_usage_item_lists_task_id")
+}
+
+model item_images {
+  id          Int          @id @default(autoincrement())
+  item_id     Int
+  object_key  String       @unique(map: "uq_item_images_object_key") @db.VarChar(512)
+  file_name   String       @db.VarChar(255)
+  mime_type   String       @db.VarChar(100)
+  size_bytes  BigInt       @default(0)
+  status      image_status @default(uploading)
+  uploaded_by Int
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  items       items        @relation(fields: [item_id], references: [id], onDelete: Cascade, map: "fk_item_images_item")
+
+  @@index([item_id, status], map: "idx_item_images_item_status")
+  @@index([status, created_at], map: "idx_item_images_status_created")
+}
+
+enum event_status {
+  pending
+  published
+}
+
+enum source_type {
+  manufacturer
+  supplier
+}
+
+enum image_status {
+  uploading
+  ready
+}
