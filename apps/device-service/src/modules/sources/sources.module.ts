@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { SourcesController } from "./sources.controller";
-import { SourcesService } from "./sources.service";
+import { DeviceSourcesController } from "./sources.controller";
+import { DeviceSourcesService } from "./sources.service";
 
 @Module({
-    controllers: [SourcesController],
-    providers: [SourcesService],
-    exports: [SourcesService],
-}) export class SourcesModule {}
+    controllers: [DeviceSourcesController],
+    providers: [DeviceSourcesService],
+    exports: [DeviceSourcesService],
+}) export class DeviceSourcesModule {}

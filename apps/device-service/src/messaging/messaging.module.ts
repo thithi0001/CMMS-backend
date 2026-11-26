@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule } from '@nestjs/microservices';
 import { BUS_CLIENT, busClientOptions } from '@app/shared';
 import { CategoryEventsPublisher } from './publishers/category-events.publisher';
-import { SourceEventsPublisher } from './publishers/source-events.publisher';
+import { DeviceSourceEventsPublisher } from './publishers/source-events.publisher';
 import { DeviceEventsPublisher } from './publishers/device-events.publisher';
 import { AssignDevicesEventsPublisher } from './publishers/assign-devices-events.publisher';
 import { RetrieveDevicesEventsPublisher } from './publishers/retrieve-devices-events.publisher';
@@ -22,7 +22,7 @@ import { DeviceEmployeeEventsPublisher } from './publishers/device-employee-even
     ],
     providers: [
         CategoryEventsPublisher,
-        SourceEventsPublisher,
+        DeviceSourceEventsPublisher,
         DeviceEventsPublisher,
         AssignDevicesEventsPublisher,
         RetrieveDevicesEventsPublisher,
@@ -32,7 +32,7 @@ import { DeviceEmployeeEventsPublisher } from './publishers/device-employee-even
     ],
     exports: [
         CategoryEventsPublisher,
-        SourceEventsPublisher,
+        DeviceSourceEventsPublisher,
         DeviceEventsPublisher,
         AssignDevicesEventsPublisher,
         RetrieveDevicesEventsPublisher,

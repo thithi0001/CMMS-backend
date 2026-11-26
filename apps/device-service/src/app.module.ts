@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { CategoriesModule } from './modules/categories/categories.module';
-import { SourcesModule } from './modules/sources/sources.module';
+import { DeviceSourcesModule } from './modules/sources/sources.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { AssignDevicesModule } from './modules/assign-devices/assign-devices.module';
 import { RetrieveDevicesModule } from './modules/retrieve-devices/retrieve-devices.module';
@@ -20,7 +20,7 @@ import { DeviceEmployeeModule } from './modules/device-employee/device-employee.
         PrismaModule,
         MessagingModule,
         CategoriesModule,
-        SourcesModule,
+        DeviceSourcesModule,
         DevicesModule,
         AssignDevicesModule,
         RetrieveDevicesModule,

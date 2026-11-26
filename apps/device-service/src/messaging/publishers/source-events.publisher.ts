@@ -1,15 +1,14 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import {
-    buildEvent, BUS_CLIENT, SERVICES, SOURCE_EVT,
-    SourceEventPayload,
-    SourceView,
-
+    buildEvent, BUS_CLIENT, SERVICES, DEVICE_SOURCE_EVT,
+    DeviceSourceEventPayload,
+    DeviceSourceView,
 } from '@app/shared';
 
 @Injectable()
-export class SourceEventsPublisher implements OnApplicationBootstrap {
-    private readonly logger = new Logger(SourceEventsPublisher.name);
+export class DeviceSourceEventsPublisher implements OnApplicationBootstrap {
+    private readonly logger = new Logger(DeviceSourceEventsPublisher.name);
 
     constructor(
         @Inject(BUS_CLIENT) 
@@ -30,16 +29,16 @@ export class SourceEventsPublisher implements OnApplicationBootstrap {
         });
     }
 
-    created(s: SourceView, actorId: number) {
-        this.publish<SourceEventPayload>(SOURCE_EVT.CREATED, {
+    created(s: DeviceSourceView, actorId: number) {
+        this.publish<DeviceSourceEventPayload>(DEVICE_SOURCE_EVT.CREATED, {
             sourceId: s.id,
             sourceName: s.name,
             sourceType: s.type
         }, actorId);
     }
 
-    updated(s: SourceView, actorId: number) {
-        this.publish<SourceEventPayload>(SOURCE_EVT.UPDATED, {
+    updated(s: DeviceSourceView, actorId: number) {
+        this.publish<DeviceSourceEventPayload>(DEVICE_SOURCE_EVT.UPDATED, {
             sourceId: s.id,
             sourceName: s.name,
             sourceType: s.type

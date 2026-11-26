@@ -1,4 +1,4 @@
-import { DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType } from "./device.enums";
+import { DeviceState, IntervalUnit, DeviceSourceType, RequestStatus, HandoverType } from "./device.enums";
 
 export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue | undefined };
@@ -17,10 +17,10 @@ export interface CategoryView {
     updatedAt?: string;
 }
 
-export interface SourceView {
+export interface DeviceSourceView {
     id: number;
     name: string;
-    type: SourceType;
+    type: DeviceSourceType;
     createdAt?: string;
     updatedAt?: string;
 }

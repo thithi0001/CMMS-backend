@@ -7,13 +7,13 @@ import {
     CreateDeviceMsg, UpdateDeviceMsg, ChangeDeviceStateMsg,
     DeviceHistoryView, DeviceView,
     Paginated,
-    SourceType,
+    DeviceSourceType,
 } from '@app/shared';
 import { DeviceEventsPublisher } from '../../messaging/publishers/device-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toDeviceHistoryView, toDeviceView } from '../views.mapper';
-import { SourcesService } from '../sources/sources.service';
+import { DeviceSourcesService } from '../sources/sources.service';
 import { CategoriesService } from '../categories/categories.service';
 import { isAllowedToChangeState } from '../device-state-machine';
 
@@ -22,7 +22,7 @@ export class DevicesService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly categoriesService: CategoriesService,
-        private readonly sourcesService: SourcesService,
+        private readonly sourcesService: DeviceSourcesService,
         private readonly events: DeviceEventsPublisher,
     ) {}
 
@@ -43,10 +43,10 @@ export class DevicesService {
     async createDevice(dto: CreateDeviceDto): Promise<DeviceView> {
         const category = await this.categoriesService.findById(dto.categoryId);
         const manufacturer = await this.sourcesService.findById(dto.manufacturerId);
-        if (manufacturer.type !== SourceType.MANUFACTURER)
+        if (manufacturer.type !== DeviceSourceType.MANUFACTURER)
             throw new ConflictException('manufacturerId must identify a manufacturer');
         const supplier = await this.sourcesService.findById(dto.supplierId);
-        if (supplier.type !== SourceType.SUPPLIER)
+        if (supplier.type !== DeviceSourceType.SUPPLIER)
             throw new ConflictException('supplierId must identify a supplier');
 
         const purchasePrice = dto.purchasePrice === undefined ? undefined :
@@ -140,11 +140,11 @@ export class DevicesService {
         if (data.categoryId)
             await this.categoriesService.findById(data.categoryId);
         if (data.manufacturerId)
-            if (SourceType.MANUFACTURER !==
+            if (DeviceSourceType.MANUFACTURER !==
                 (await this.sourcesService.findById(data.manufacturerId)).type)
                 throw new ConflictException('manufacturerId must identify a manufacturer');
         if (data.supplierId)
-            if (SourceType.SUPPLIER !==
+            if (DeviceSourceType.SUPPLIER !==
                 (await this.sourcesService.findById(data.supplierId)).type)
                 throw new ConflictException('supplierId must identify a supplier');
 

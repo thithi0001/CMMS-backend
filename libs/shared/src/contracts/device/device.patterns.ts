@@ -12,14 +12,14 @@ export const CATEGORY_EVT = {
     DELETED: 'evt.category.deleted',
 } as const;
 
-export const SOURCE_CMD = {
+export const DEVICE_SOURCE_CMD = {
     CREATE: 'cmd.source.create',
     UPDATE: 'cmd.source.update',
     FIND_ALL: 'cmd.source.find_all',
     FIND_BY_ID: 'cmd.source.find_by_id',
 } as const;
 
-export const SOURCE_EVT = {
+export const DEVICE_SOURCE_EVT = {
     CREATED: 'evt.source.created',
     UPDATED: 'evt.source.updated',
 } as const;

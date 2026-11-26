@@ -7,8 +7,8 @@ import {
     DisposeDeviceView,
     HandoverDeviceView,
     RetrieveDeviceView,
-    SourceView,
-    DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType
+    DeviceSourceView,
+    DeviceState, IntervalUnit, DeviceSourceType, RequestStatus, HandoverType
 } from "@app/shared";
 import type { 
     categories, Prisma, sources, device_activity_histories,
@@ -30,11 +30,11 @@ export function toCategoryView(category: categories): CategoryView {
     };
 }
 
-export function toSourceView(source: sources): SourceView {
+export function toSourceView(source: sources): DeviceSourceView {
     return {
         id: source.id,
         name: source.name,
-        type: source.type as SourceType,
+        type: source.type as DeviceSourceType,
         createdAt: source.created_at?.toISOString(),
         updatedAt: source.updated_at?.toISOString(),
     };

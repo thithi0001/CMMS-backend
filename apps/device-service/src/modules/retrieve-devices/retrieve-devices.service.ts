@@ -107,7 +107,7 @@ export class RetrieveDevicesService {
         return view;
     }
 
-    async confirm
+    // async confirm
 
     async delete({ id, actor }: DeleteRetrieveDeviceMsg): Promise<RetrieveDeviceView> {
         const retrieve = await this.findById(id);

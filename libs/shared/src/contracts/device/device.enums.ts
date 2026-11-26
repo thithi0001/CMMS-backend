@@ -6,11 +6,11 @@ export const IntervalUnit = {
 } as const;
 export type IntervalUnit = (typeof IntervalUnit)[keyof typeof IntervalUnit];
 
-export const SourceType = {
+export const DeviceSourceType = {
     MANUFACTURER: 'manufacturer',
     SUPPLIER: 'supplier',
 } as const;
-export type SourceType = (typeof SourceType)[keyof typeof SourceType];
+export type DeviceSourceType = (typeof DeviceSourceType)[keyof typeof DeviceSourceType];
 
 export const DeviceState = {
     AVAILABLE: 'available',

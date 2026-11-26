@@ -5,7 +5,7 @@ import {
 } from 'class-validator';
 import { FindQueryDto } from '@app/shared/types/find-query';
 import { 
-    DeviceState, IntervalUnit, SourceType, RequestStatus, HandoverType, 
+    DeviceState, IntervalUnit, DeviceSourceType, RequestStatus, HandoverType, 
 } from './device.enums';
 
 export class CreateCategoryDto {
@@ -32,17 +32,17 @@ export class FindCategoryQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
-export class CreateSourceDto {
+export class CreateDeviceSourceDto {
     @IsNotEmpty() @IsString() name!: string;
-    @IsIn(Object.values(SourceType)) type!: SourceType;
+    @IsIn(Object.values(DeviceSourceType)) type!: DeviceSourceType;
 }
 
-export class UpdateSourceDto {
+export class UpdateDeviceSourceDto {
     @IsOptional() @IsString() name?: string;
 }
 
-export class FindSourceQueryDto extends FindQueryDto {
-    @IsOptional() @IsIn(Object.values(SourceType)) type?: SourceType;
+export class FindDeviceSourceQueryDto extends FindQueryDto {
+    @IsOptional() @IsIn(Object.values(DeviceSourceType)) type?: DeviceSourceType;
 }
 
 export class CreateDeviceDto {

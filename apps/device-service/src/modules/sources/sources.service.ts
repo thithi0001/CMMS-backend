@@ -1,25 +1,24 @@
 import {
     ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import {
-    CreateSourceDto,
+    CreateDeviceSourceDto,
     CreateSourceMsg,
-    FindSourceQueryDto,
+    FindDeviceSourceQueryDto,
     Paginated,
-    SourceView,
+    DeviceSourceView,
     UpdateSourceMsg,
 } from '@app/shared';
-import { SourceEventsPublisher } from '../../messaging/publishers/source-events.publisher';
+import { DeviceSourceEventsPublisher } from '../../messaging/publishers/source-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toSourceView } from '../views.mapper';
 
 @Injectable()
-export class SourcesService {
+export class DeviceSourcesService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly events: SourceEventsPublisher,
+        private readonly events: DeviceSourceEventsPublisher,
     ) {}
 
     // === Nội bộ ===
@@ -29,7 +28,7 @@ export class SourcesService {
         });
     }
 
-    async createSource(dto: CreateSourceDto): Promise<SourceView> {
+    async createSource(dto: CreateDeviceSourceDto): Promise<DeviceSourceView> {
         const source = await this.prisma.sources.create({
             data: {
                 name: dto.name,
@@ -41,13 +40,13 @@ export class SourcesService {
     }
 
     // === RPC ===
-    async create({ dto, actor }: CreateSourceMsg): Promise<SourceView> {
+    async create({ dto, actor }: CreateSourceMsg): Promise<DeviceSourceView> {
         const source = await this.createSource(dto);
         this.events.created(source, actor.sub);
         return source;
     }
 
-    async findAll(q: FindSourceQueryDto): Promise<Paginated<SourceView>> {
+    async findAll(q: FindDeviceSourceQueryDto): Promise<Paginated<DeviceSourceView>> {
         const {
             page = 1,
             limit = 20,
@@ -75,7 +74,7 @@ export class SourcesService {
         };
     }
 
-    async findById(id: number): Promise<SourceView> {
+    async findById(id: number): Promise<DeviceSourceView> {
         const source = await this.findSourceById(id);
         if (!source)
             throw new NotFoundException('Source not found');
@@ -83,7 +82,7 @@ export class SourcesService {
         return source;
     }
     
-    async udpate({ id, data, actor }: UpdateSourceMsg): Promise<SourceView> {
+    async udpate({ id, data, actor }: UpdateSourceMsg): Promise<DeviceSourceView> {
         await this.findById(id);
 
         const source = await this.prisma.sources.update({
