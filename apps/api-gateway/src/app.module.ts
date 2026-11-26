@@ -12,27 +12,28 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['app/api-gateway/.env', '.env'],
-    }),
-    JwtModule.registerAsync({
-      global: true,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
-      })
-    }),
-    BusModule,
-    AuthModule,
-    UsersModule,
-    DevicesModule,
-    MaintenanceModule,
-    InventoryModule,
-  ],
-  providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
-  ],
-}) export class AppModule {}
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: ['app/api-gateway/.env', '.env'],
+        }),
+        JwtModule.registerAsync({
+            global: true,
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+                secret: config.getOrThrow<string>('JWT_SECRET'),
+            }),
+        }),
+        BusModule,
+        AuthModule,
+        UsersModule,
+        DevicesModule,
+        MaintenanceModule,
+        InventoryModule,
+    ],
+    providers: [
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
+    ],
+})
+export class AppModule { }
