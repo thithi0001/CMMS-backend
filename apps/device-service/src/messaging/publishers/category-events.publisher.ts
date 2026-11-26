@@ -33,7 +33,6 @@ export class CategoryEventsPublisher implements OnApplicationBootstrap {
     created(c: CategoryView, actorId: number) {
         this.publish<CategoryEventPayload>(CATEGORY_EVT.CREATED, {
             categoryId: c.id,
-            categoryName: c.name,
             categoryCode: c.code
         }, actorId);
     }
@@ -48,7 +47,6 @@ export class CategoryEventsPublisher implements OnApplicationBootstrap {
     deleted(c: CategoryView, actorId: number) {
         this.publish<CategoryEventPayload>(CATEGORY_EVT.DELETED, {
             categoryId: c.id,
-            categoryName: c.name,
             categoryCode: c.code
         }, actorId);
     }

@@ -1,7 +1,6 @@
 import {
     BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import {
     Paginated,
     CreateCategoryDto,
@@ -23,23 +22,21 @@ export class CategoriesService {
         private readonly events: CategoryEventsPublisher,
     ) {}
 
-    // === Nội bộ ===
-    findCategoryById(id: number) {
-        return this.prisma.categories.findUnique({
-            where: { id },
-        });
-    }
-
-    async createCategory(dto: CreateCategoryDto): Promise<CategoryView> {
-        if (dto.depreciationPeriodMaxMonths && dto.depreciationPeriodMinMonths)
-            if (dto.depreciationPeriodMaxMonths < dto.depreciationPeriodMinMonths)
-                throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
+    // === RPC ===
+    async create({ dto, actor }: CreateCategoryMsg): Promise<CategoryView> {
+        const max = dto.depreciationPeriodMaxMonths;
+        const min = dto.depreciationPeriodMinMonths;
+        if (max && min && max < min)
+            throw new ConflictException(
+                'The maximum depreciation period value must be greater than the minimum depreciation period value');
 
         if (
             (dto.intervalValue && !dto.intervalUnit)
             || (!dto.intervalValue && dto.intervalUnit)
-        )
-            throw new BadRequestException('Both internal value and internal unit must be defined together');
+        ) {
+            throw new BadRequestException(
+                'Both internal value and internal unit must be defined together');
+        }
         
         const category = await this.prisma.categories.create({
             data: {
@@ -48,19 +45,13 @@ export class CategoriesService {
                 description: dto.description,
                 interval_value: dto.intervalValue,
                 interval_unit: dto.intervalUnit,
-                depreciation_period_min_months: dto.depreciationPeriodMinMonths,
-                depreciation_period_max_months: dto.depreciationPeriodMaxMonths,
+                depreciation_period_min_months: min,
+                depreciation_period_max_months: max,
             },
         });
-
-        return toCategoryView(category);
-    }
-
-    // === RPC ===
-    async create({ dto, actor }: CreateCategoryMsg): Promise<CategoryView> {
-        const category = await this.createCategory(dto);
-        this.events.created(category, actor.sub);
-        return category;
+        const view = toCategoryView(category);
+        this.events.created(view, actor.sub);
+        return view;
     }
 
     async findAll(q: FindCategoryQueryDto): Promise<Paginated<CategoryView>> {
@@ -92,7 +83,7 @@ export class CategoriesService {
     }
 
     async findById(id: number): Promise<CategoryView> {
-        const category = await this.findCategoryById(id);
+        const category = await this.prisma.categories.findUnique({ where: { id }});
         if (!category) throw new NotFoundException('Category not found');
         return toCategoryView(category);
     }
@@ -102,15 +93,26 @@ export class CategoriesService {
 
         const min = data.depreciationPeriodMinMonths? data.depreciationPeriodMinMonths : category.depreciationPeriodMinMonths;
         const max = data.depreciationPeriodMaxMonths? data.depreciationPeriodMaxMonths : category.depreciationPeriodMaxMonths;
-        if (max && min)
-            if (max < min)
-                throw new ConflictException('The maximum depreciation period value must be greater than the minimum depreciation period value');
+        if (max && min && max < min)
+            throw new ConflictException(
+                'The maximum depreciation period value must be greater than the minimum depreciation period value');
 
         if (
             (data.intervalValue && !data.intervalUnit)
             || (!data.intervalValue && data.intervalUnit)
-        )
-            throw new BadRequestException('Both internal value and internal unit must be defined together');
+        ) {
+            throw new BadRequestException(
+                'Both internal value and internal unit must be defined together');
+        }
+
+        if (data.code !== undefined && data.code !== category.code) {
+            const codeOwner = await this.prisma.categories.findUnique({
+                where: { code: data.code },
+                select: { id: true },
+            });
+            if (codeOwner && codeOwner.id !== id)
+                throw new ConflictException('Category code already exists');
+        }
 
         const patch = {
             name: data.name,
@@ -122,8 +124,8 @@ export class CategoriesService {
             depreciation_period_max_months: max,
         };
         const changedFields = Object.entries(patch)
-        .filter(([,v]) => v !== undefined)
-        .map(([k]) => k);
+            .filter(([,v]) => v !== undefined)
+            .map(([k]) => k);
         if (!changedFields.length) return category;
         
         const updated = await this.prisma.categories.update({
