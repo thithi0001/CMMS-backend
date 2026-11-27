@@ -27,6 +27,8 @@ export function isAllowedToChangeState(currentState: DeviceState, newState: Devi
         case DeviceState.DISPOSED:
             included = [];
             break;
+        default: 
+            return false;
     }
     // nếu new state nằm trong mảng cho phép thì true
     return included.includes(newState);

@@ -225,7 +225,9 @@ export class CreateDisposeDeviceDto {
     disposalValue!: string;    
 }
 
-export class FindDisposeDeviceQueryDto extends FindQueryDto {}
+export class FindDisposeDeviceQueryDto extends FindQueryDto {
+    @IsOptional() @IsBoolean() me?: boolean;
+}
 
 export class CreateDeviceEmployeeDto {
     @IsInt() @Min(1) deviceId!: number;

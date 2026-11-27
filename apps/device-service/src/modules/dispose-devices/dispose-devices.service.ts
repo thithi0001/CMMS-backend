@@ -3,7 +3,8 @@ import {
 } from '@nestjs/common';
 import {
     CreateDisposeDeviceMsg, DisposeDeviceView, DeviceState,
-    FindDisposeDeviceQueryDto, Paginated, Role,
+    Paginated, Role,
+    FindDisposeDeviceMsg,
 } from '@app/shared';
 import { DisposeDevicesEventsPublisher } from '../../messaging/publishers/dispose-devices-events.publisher';
 import { Prisma } from '../../prisma/generated/client';
@@ -20,17 +21,27 @@ export class DisposeDevicesService {
         private readonly events: DisposeDevicesEventsPublisher,
     ) {}
 
-    async create({ dto, actor }: CreateDisposeDeviceMsg): Promise<DisposeDeviceView> {
-        const device = await this.devicesService.findById(dto.deviceId);
-        if (!isAllowedToChangeState(device.state, DeviceState.DISPOSED))
-            throw new ConflictException(`Cannot change device state from ${device.state} to ${DeviceState.DISPOSED}`);
+    private readonly disposeDeviceInclude = {
+        devices: { select: { code: true }},
+    } satisfies Prisma.disposal_devicesInclude;
 
-        const [_, disposal] = await this.prisma.$transaction([
-            this.prisma.devices.update({
+    async create({ dto, actor }: CreateDisposeDeviceMsg): Promise<DisposeDeviceView> {
+        const result = await this.prisma.$transaction(async tx => {
+            await tx.$queryRaw`
+                SELECT id FROM devices 
+                WHERE id = ${dto.deviceId}
+                FOR UPDATE
+            `;
+
+            const device = await this.devicesService.findById(dto.deviceId);
+            if (!isAllowedToChangeState(device.state, DeviceState.DISPOSED))
+                throw new ConflictException(`Cannot change device state from ${device.state} to ${DeviceState.DISPOSED}`);
+            await tx.devices.update({
                 where: { id: device.id },
                 data: { state: DeviceState.DISPOSED },
-            }),
-            this.prisma.disposal_devices.create({
+            });
+
+            const disposal = await tx.disposal_devices.create({
                 data: {
                     id: device.id,
                     creator_id: actor.employeeId,
@@ -38,29 +49,27 @@ export class DisposeDevicesService {
                     disposal_value: Prisma.Decimal(dto.disposalValue),
                     reason: dto.reason,
                 },
-                include: { devices: { select: { code: true } } },
-            }),
-        ]);
-        const view = toDisposeDeviceView(disposal);
+                include: this.disposeDeviceInclude,
+            });
+            return { disposal };
+        });
+
+        const view = toDisposeDeviceView(result.disposal);
         this.events.disposed(view, actor.sub);
         return view;
     }
 
-    private findDisposeDeviceById(id: number) {
-        return this.prisma.disposal_devices.findUnique({
-            where: { id },
-            include: { devices: { select: { code: true } } },
-        });
-    }
-
     async findById(id: number): Promise<DisposeDeviceView> {
-        const disposal = await this.findDisposeDeviceById(id);
+        const disposal = await this.prisma.disposal_devices.findUnique({
+            where: { id },
+            include: this.disposeDeviceInclude,
+        });
         if (!disposal) throw new NotFoundException('Dispose device form not found');
         return toDisposeDeviceView(disposal);
     }
 
-    async findAll(q: FindDisposeDeviceQueryDto): Promise<Paginated<DisposeDeviceView>> {
-        const { page = 1, limit = 20 } = q;
+    async findAll({ q, actor }: FindDisposeDeviceMsg): Promise<Paginated<DisposeDeviceView>> {
+        const { page = 1, limit = 20, me = false } = q;
         const priceFilter = {
             ...(q.above !== undefined ? { gte: new Prisma.Decimal(q.above) } : {}),
             ...(q.below !== undefined ? { lte: new Prisma.Decimal(q.below) } : {}),
@@ -69,8 +78,9 @@ export class DisposeDevicesService {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
+        const userId = me ? actor.employeeId : q.userId;
         const where: Prisma.disposal_devicesWhereInput = {
-            ...(q.userId && { creator_id: q.userId }),
+            ...(userId && { creator_id: userId }),
             ...(Object.keys(priceFilter).length > 0 ? { disposal_value: priceFilter } : {}),
             ...(Object.keys(dateFilter).length > 0 ? { disposal_date: dateFilter } : {}),
         };
@@ -85,7 +95,7 @@ export class DisposeDevicesService {
                     { disposal_date: 'desc' },
                     { created_at: 'desc' },
                 ],
-                include: { devices: { select: { code: true } } },
+                include: this.disposeDeviceInclude,
             }),
         ]);
 
