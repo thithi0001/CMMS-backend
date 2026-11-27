@@ -192,12 +192,16 @@ export class CreateHandoverDeviceDto {
 }
 
 export class UpdateHandoverDeviceDto {
+    @IsOptional() @IsInt() @Min(1) deliverId?: number;
+    @IsOptional() @IsInt() @Min(1) receiverId?: number;
+    @IsOptional() @IsIn(Object.values(HandoverType)) type?: HandoverType;
     @IsOptional() @IsDateString() handoveredAt?: string;
 }
 
 export class FindHandoverDeviceQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isHandoverd?: boolean;
     @IsOptional() @IsInt() @Min(1) taskId?: number;
+    @IsOptional() @IsInt() @Min(1) deviceId?: number;
     @IsOptional() @IsIn(Object.values(HandoverType)) type?: HandoverType;
 }
 

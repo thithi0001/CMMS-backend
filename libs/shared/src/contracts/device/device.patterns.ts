@@ -53,6 +53,7 @@ export const RETRIEVE_DEVICE_CMD = {
 export const HANDOVER_DEVICE_CMD = {
     CREATE: 'cmd.handover_device.create',
     UPDATE: 'cmd.handover_device.update',
+    CONFIRM: 'cmd.handover_device.confirm',
     DELETE: 'cmd.handover_device.delete',
 } as const;
 
@@ -87,6 +88,7 @@ export const RETRIEVE_DEVICE_EVT = {
 export const HANDOVER_DEVICE_EVT = {
     CREATED: 'evt.handover_device.created',
     UPDATED: 'evt.handover_device.updated',
+    CONFIRMED: 'evt.handover_device.confirmed',
     DELETED: 'evt.handover_device.deleted',
 } as const;
 

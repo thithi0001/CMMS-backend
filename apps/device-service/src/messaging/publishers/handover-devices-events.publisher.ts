@@ -47,6 +47,15 @@ export class HandoverDevicesEventsPublisher implements OnApplicationBootstrap {
         }, actorId);
     }
 
+    confirmed(handover: HandoverDeviceView, actorId: number) {
+        this.publish<HandoverDevicePayload>(HANDOVER_DEVICE_EVT.UPDATED, {
+            handoverDeviceId: handover.id,
+            deviceCode: handover.device.code,
+            creatorId: handover.creatorId,
+            taskId: handover.taskId
+        }, actorId);
+    }
+
     deleted(handover: HandoverDeviceView, actorId: number) {
         this.publish<HandoverDevicePayload>(HANDOVER_DEVICE_EVT.DELETED, {
             handoverDeviceId: handover.id,
