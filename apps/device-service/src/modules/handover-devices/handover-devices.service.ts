@@ -57,13 +57,12 @@ export class HandoverDevicesService {
     }
 
     async findAll({ q, actor }: FindHandoverDeviceMsg): Promise<Paginated<HandoverDeviceView>> {
-        const { page = 1, limit = 20, isHandoverd = false } = q;
+        const { page = 1, limit = 20, isHandoverd = false, me = true } = q;
         const dateFilter = {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
-        const userId = (actor.roleCode === Role.ADMIN || actor.roleCode === Role.MANAGER) 
-            ? q.userId : actor.employeeId;
+        const userId = me ? actor.employeeId : q.userId;
         const where: Prisma.handover_devicesWhereInput = {
             is_handovered: isHandoverd,
             ...(userId && {

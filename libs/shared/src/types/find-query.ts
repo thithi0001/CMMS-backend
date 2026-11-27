@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import { 
-    IsOptional, IsInt, Min, Max, IsString, Matches, IsDateString
+    IsOptional, IsInt, Min, Max, IsString, Matches, IsDateString,
+    IsBoolean
 } from "class-validator";
 
 export class FindQueryDto {
@@ -23,6 +24,8 @@ export class FindQueryDto {
     @Min(1)
     @Max(100)
     userId?: number;
+
+    @IsOptional() @IsBoolean() me?: boolean;
     
     @IsOptional() @IsString() search?: string;
 
