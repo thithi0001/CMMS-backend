@@ -93,6 +93,7 @@ export class DisposeDevicesService {
                 take: limit,
                 orderBy: [
                     { disposal_date: 'desc' },
+                    { devices: { code: 'asc' }},
                     { created_at: 'desc' },
                 ],
                 include: this.disposeDeviceInclude,
