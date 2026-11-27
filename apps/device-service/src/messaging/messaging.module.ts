@@ -10,6 +10,7 @@ import { RetrieveDevicesEventsPublisher } from './publishers/retrieve-devices-ev
 import { HandoverDevicesEventsPublisher } from './publishers/handover-devices-events.publisher';
 import { DisposeDevicesEventsPublisher } from './publishers/dispose-devices-events.publisher';
 import { DeviceEmployeeEventsPublisher } from './publishers/device-employee-events.publisher';
+import { MaintenanceTasksClient } from './clients/maintenance-tasks.client';
 @Global()
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import { DeviceEmployeeEventsPublisher } from './publishers/device-employee-even
         HandoverDevicesEventsPublisher,
         DisposeDevicesEventsPublisher,
         DeviceEmployeeEventsPublisher,
+        MaintenanceTasksClient,
     ],
     exports: [
         CategoryEventsPublisher,
@@ -39,5 +41,6 @@ import { DeviceEmployeeEventsPublisher } from './publishers/device-employee-even
         HandoverDevicesEventsPublisher,
         DisposeDevicesEventsPublisher,
         DeviceEmployeeEventsPublisher,
+        MaintenanceTasksClient,
     ],
 }) export class MessagingModule {}
