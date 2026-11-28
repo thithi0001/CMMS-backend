@@ -62,7 +62,8 @@ export class HandoverDevicesService {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
-        const userId = me ? actor.employeeId : q.userId;
+        const canViewAll = (actor.roleCode === Role.ADMIN || actor.roleCode === Role.MANAGER);
+        const userId = me || !canViewAll ? actor.employeeId : q.userId;
         const where: Prisma.handover_devicesWhereInput = {
             is_handovered: isHandoverd,
             ...(userId && {

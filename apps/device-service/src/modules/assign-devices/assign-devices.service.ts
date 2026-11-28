@@ -53,13 +53,13 @@ export class AssignDevicesService {
     }
 
     async findAll({ q, actor }: FindAssignDeviceMsg): Promise<Paginated<AssignDeviceView>> {
-        const { page = 1, limit = 20, status = RequestStatus.PENDING } = q;
+        const { page = 1, limit = 20, status = RequestStatus.PENDING, me = true } = q;
         const dateFilter = {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
-        const userId = (actor.roleCode === Role.ADMIN || actor.roleCode === Role.MANAGER) 
-            ? q.userId : actor.employeeId;
+        const canViewAll = (actor.roleCode === Role.ADMIN || actor.roleCode === Role.MANAGER);
+        const userId = me || !canViewAll ? actor.employeeId : q.userId;
         const where: Prisma.assign_devicesWhereInput = {
             status,
             ...(userId && {

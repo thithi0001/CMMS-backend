@@ -78,6 +78,7 @@ export class DisposeDevicesService {
             ...(q.from !== undefined ? { gte: new Date(q.from) } : {}),
             ...(q.to !== undefined ? { lte: new Date(q.to) } : {}),
         };
+        // chỉ có admin và manager mới xem gọi được route này
         const userId = me ? actor.employeeId : q.userId;
         const where: Prisma.disposal_devicesWhereInput = {
             ...(userId && { creator_id: userId }),
