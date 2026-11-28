@@ -7,10 +7,10 @@ export function isAllowedToChangeState(currentState: DeviceState, newState: Devi
             included = [DeviceState.IN_USE, DeviceState.BROKEN, DeviceState.UNDER_MAINTENANCE, DeviceState.AWAITING_DISPOSED, DeviceState.DISPOSED];
             break;
         case DeviceState.IN_USE:
-            included = [DeviceState.AVAILABLE, DeviceState.BROKEN, DeviceState.UNDER_MAINTENANCE];
+            included = [DeviceState.AVAILABLE, DeviceState.BROKEN, DeviceState.UNDER_MAINTENANCE, DeviceState.AWAITING_DISPOSED];
             break;
         case DeviceState.BROKEN:
-            included = [DeviceState.UNDER_MAINTENANCE];
+            included = [DeviceState.UNDER_MAINTENANCE, DeviceState.AWAITING_DISPOSED];
             break;
         case DeviceState.UNDER_MAINTENANCE:
             included = [DeviceState.AWAITING_PARTS, DeviceState.TESTING, DeviceState.AWAITING_DISPOSED, DeviceState.DISPOSED];
