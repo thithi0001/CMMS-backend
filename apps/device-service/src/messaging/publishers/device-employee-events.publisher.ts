@@ -3,6 +3,7 @@ import { ClientProxy } from "@nestjs/microservices";
 import {
     buildEvent, BUS_CLIENT, DeviceEmployeePayload, DeviceEmployeeView,
     DEVICE_EMPLOYEE_EVT, SERVICES,
+    DeviceState,
 } from '@app/shared';
 
 @Injectable()
@@ -34,22 +35,18 @@ export class DeviceEmployeeEventsPublisher implements OnApplicationBootstrap {
             deviceId: employeeDevice.device.id,
             deviceCode: employeeDevice.device.code,
             employeeId: employeeDevice.employeeId,
-            approverId: employeeDevice.approverId,
+            approverId: employeeDevice.approverId
         }, actorId);
     }
 
-    updated(
-        employeeDevice: DeviceEmployeeView,
-        changedFields: string[],
-        actorId: number,
-    ) {
-        this.publish<DeviceEmployeePayload>(DEVICE_EMPLOYEE_EVT.UPDATED, {
+    returned(employeeDevice: DeviceEmployeeView, newState: DeviceState, actorId: number) {
+        this.publish<DeviceEmployeePayload>(DEVICE_EMPLOYEE_EVT.RETURNED, {
             id: employeeDevice.id,
             deviceId: employeeDevice.device.id,
             deviceCode: employeeDevice.device.code,
             employeeId: employeeDevice.employeeId,
             approverId: employeeDevice.approverId,
-            changedFields,
+            newState
         }, actorId);
     }
 }

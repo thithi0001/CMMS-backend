@@ -3,6 +3,7 @@ import { ClientProxy } from "@nestjs/microservices";
 import {
     buildEvent, BUS_CLIENT, RetrieveDevicePayload, RetrieveDeviceView,
     RETRIEVE_DEVICE_EVT, SERVICES,
+    Role,
 } from '@app/shared';
 
 @Injectable()
@@ -28,28 +29,40 @@ export class RetrieveDevicesEventsPublisher implements OnApplicationBootstrap {
         });
     }
 
-    created(retrieve: RetrieveDeviceView, actorId: number) {
+    created(retrieve: RetrieveDeviceView, actorId: number, actorRole: Role) {
         this.publish<RetrieveDevicePayload>(RETRIEVE_DEVICE_EVT.CREATED, {
             retrieveDeviceId: retrieve.id,
             deviceCode: retrieve.device.code,
             creatorId: retrieve.creatorId,
+            actorRole // creator 
         }, actorId);
     }
 
-    updated(retrieve: RetrieveDeviceView, changedFields: string[], actorId: number) {
+    updated(retrieve: RetrieveDeviceView, changedFields: string[], actorId: number, actorRole: Role) {
         this.publish<RetrieveDevicePayload>(RETRIEVE_DEVICE_EVT.UPDATED, {
             retrieveDeviceId: retrieve.id,
             deviceCode: retrieve.device.code,
             creatorId: retrieve.creatorId,
             changedFields,
+            actorRole // creator 
         }, actorId);
     }
 
-    deleted(retrieve: RetrieveDeviceView, actorId: number) {
+    confirmed(retrieve: RetrieveDeviceView, actorId: number, actorRole: Role) {
+        this.publish<RetrieveDevicePayload>(RETRIEVE_DEVICE_EVT.CONFIRMED, {
+            retrieveDeviceId: retrieve.id,
+            deviceCode: retrieve.device.code,
+            creatorId: retrieve.creatorId,
+            actorRole // confirmer 
+        }, actorId);
+    }
+
+    deleted(retrieve: RetrieveDeviceView, actorId: number, actorRole: Role) {
         this.publish<RetrieveDevicePayload>(RETRIEVE_DEVICE_EVT.DELETED, {
             retrieveDeviceId: retrieve.id,
             deviceCode: retrieve.device.code,
             creatorId: retrieve.creatorId,
+            actorRole // creator 
         }, actorId);
     }
 }
