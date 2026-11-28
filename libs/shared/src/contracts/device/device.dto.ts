@@ -169,12 +169,10 @@ export class FindAssignDeviceQueryDto extends FindQueryDto {
 
 export class CreateRetrieveDeviceDto {
     @IsInt() @Min(1) deviceId!: number;
-    @IsInt() @Min(1) confirmerId!: number;
     @IsDateString() requiredTime!: string;
 }
 
 export class UpdateRetrieveDeviceDto {
-    @IsOptional() @IsBoolean() isConfirmed?: boolean;
     @IsOptional() @IsDateString() requiredTime?: string;
     @IsOptional() @IsInt() @Min(1) handoverId?: number;
 }
@@ -230,14 +228,16 @@ export class FindDisposeDeviceQueryDto extends FindQueryDto {}
 export class CreateDeviceEmployeeDto {
     @IsInt() @Min(1) deviceId!: number;
     @IsInt() @Min(1) employeeId!: number;
-    @IsDateString() assignedAt!: string;
+    @IsOptional() @IsDateString() assignedAt?: string;
 }
 
 export class UpdateDeviceEmployeeDto {
     @IsDateString() returnedAt!: string;
+    @IsOptional() @IsIn(Object.values(DeviceState)) newState?: DeviceState;
 }
 
 export class FindDeviceEmployeeQueryDto extends FindQueryDto {
     @IsOptional() @IsBoolean() isReturned?: boolean;
+    @IsOptional() @IsInt() @Min(1) deviceId?: number;
 }
 

@@ -1,3 +1,4 @@
+import { Role } from "@app/shared/types/role";
 import { DeviceState, DeviceSourceType } from "./device.enums";
 
 export interface CategoryEventPayload {
@@ -39,6 +40,7 @@ export interface RetrieveDevicePayload {
     retrieveDeviceId: number;
     deviceCode: string;
     creatorId: number;
+    actorRole: Role;
     changedFields?: string[];
 }
 
@@ -62,5 +64,6 @@ export interface DeviceEmployeePayload {
     deviceCode: string,
     employeeId: number,
     approverId: number,
+    newState?: DeviceState,
     changedFields?: string[],
 }

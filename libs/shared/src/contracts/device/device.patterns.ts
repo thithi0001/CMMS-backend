@@ -47,6 +47,7 @@ export const ASSIGN_DEVICE_CMD = {
 export const RETRIEVE_DEVICE_CMD = {
     CREATE: 'cmd.retrieve_device.create',
     UPDATE: 'cmd.retrieve_device.update',
+    CONFIRM: 'cmd.retrieve_device.confirm',
     DELETE: 'cmd.retrieve_device.delete',
 } as const;
 
@@ -64,6 +65,7 @@ export const DISPOSE_DEVICE_CMD = {
 export const DEVICE_EMPLOYEE_CMD = {
     CREATE: 'cmd.device_employee.create',
     UPDATE: 'cmd.device_employee.update',
+    RETURN: 'cmd.device_employee.return',
 } as const;
 
 export const DEVICE_EVT = {
@@ -82,6 +84,7 @@ export const ASSIGN_DEVICE_EVT = {
 export const RETRIEVE_DEVICE_EVT = {
     CREATED: 'evt.retrieve_device.created',
     UPDATED: 'evt.retrieve_device.updated',
+    CONFIRMED: 'evt.retrieve_device.confirmed',
     DELETED: 'evt.retrieve_device.deleted',
 } as const;
 
@@ -99,6 +102,7 @@ export const DISPOSE_DEVICE_EVT = {
 export const DEVICE_EMPLOYEE_EVT = {
     CREATED: 'evt.device_employee.created',
     UPDATED: 'evt.device_employee.updated',
+    RETURNED: 'evt.device_employee.returned',
 } as const;
 
 

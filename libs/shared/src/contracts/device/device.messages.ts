@@ -17,7 +17,9 @@ import {
     UpdateRetrieveDeviceDto,
     UpdateDeviceSourceDto,
     FindHandoverDeviceQueryDto,
-    FindDisposeDeviceQueryDto, 
+    FindDisposeDeviceQueryDto,
+    FindRetrieveDeviceQueryDto,
+    FindDeviceEmployeeQueryDto, 
 } from './device.dto';
 import { DeviceState } from "./device.enums";
 import { RequestUploadDto } from "../storage";
@@ -50,7 +52,9 @@ export interface FindAssignDeviceMsg { q: FindAssignDeviceQueryDto, actor: JwtPa
 // RETRIEVE
 export interface CreateRetrieveDeviceMsg { dto: CreateRetrieveDeviceDto, actor: JwtPayload }
 export interface UpdateRetrieveDeviceMsg { id: number, data: UpdateRetrieveDeviceDto, actor: JwtPayload }
-export interface DeleteRetrieveDeviceMsg { id: number, actor: JwtPayload }
+export interface RetrieveDeviceActionMsg { id: number, actor: JwtPayload }
+export interface DeleteRetrieveDeviceMsg extends RetrieveDeviceActionMsg {}
+export interface FindRetrieveDeviceMsg { q: FindRetrieveDeviceQueryDto, actor: JwtPayload }
 
 // HANDOVER
 export interface CreateHandoverDeviceMsg { dto: CreateHandoverDeviceDto, actor: JwtPayload }
@@ -65,3 +69,5 @@ export interface FindDisposeDeviceMsg { q: FindDisposeDeviceQueryDto, actor: Jwt
 // DEVICE & EMPLOYEE
 export interface CreateDeviceEmployeeMsg { dto: CreateDeviceEmployeeDto, actor: JwtPayload }
 export interface UpdateDeviceEmployeeMsg { id: number, data: UpdateDeviceEmployeeDto, actor: JwtPayload }
+export interface FindDeviceEmployeeMsg { q: FindDeviceEmployeeQueryDto, actor: JwtPayload }
+
