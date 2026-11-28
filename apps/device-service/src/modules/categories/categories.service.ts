@@ -3,7 +3,6 @@ import {
 } from '@nestjs/common';
 import {
     Paginated,
-    CreateCategoryDto,
     CategoryView,
     CreateCategoryMsg,
     FindCategoryQueryDto,

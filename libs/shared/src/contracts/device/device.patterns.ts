@@ -42,6 +42,8 @@ export const ASSIGN_DEVICE_CMD = {
     UPDATE: 'cmd.assign_device.update',
     DELETE: 'cmd.assign_device.delete',
     CONFIRM: 'cmd.assign_device.confirm',
+    FIND_ALL: 'cmd.assign_device.find_all',
+    FIND_BY_ID: 'cmd.assign_device.find_by_id',
 } as const;
 
 export const RETRIEVE_DEVICE_CMD = {
@@ -49,6 +51,8 @@ export const RETRIEVE_DEVICE_CMD = {
     UPDATE: 'cmd.retrieve_device.update',
     CONFIRM: 'cmd.retrieve_device.confirm',
     DELETE: 'cmd.retrieve_device.delete',
+    FIND_ALL: 'cmd.retrieve_device.find_all',
+    FIND_BY_ID: 'cmd.retrieve_device.find_by_id',
 } as const;
 
 export const HANDOVER_DEVICE_CMD = {
@@ -56,16 +60,22 @@ export const HANDOVER_DEVICE_CMD = {
     UPDATE: 'cmd.handover_device.update',
     CONFIRM: 'cmd.handover_device.confirm',
     DELETE: 'cmd.handover_device.delete',
+    FIND_ALL: 'cmd.handover_device.find_all',
+    FIND_BY_ID: 'cmd.handover_device.find_by_id',
 } as const;
 
 export const DISPOSE_DEVICE_CMD = {
     DISPOSE: 'cmd.device.dispose',
+    FIND_ALL: 'cmd.dispose_device.find_all',
+    FIND_BY_ID: 'cmd.dispose_device.find_by_id',
 } as const;
 
 export const DEVICE_EMPLOYEE_CMD = {
     CREATE: 'cmd.device_employee.create',
     UPDATE: 'cmd.device_employee.update',
     RETURN: 'cmd.device_employee.return',
+    FIND_ALL: 'cmd.device_employee.find_all',
+    FIND_BY_ID: 'cmd.device_employee.find_by_id',
 } as const;
 
 export const DEVICE_EVT = {
