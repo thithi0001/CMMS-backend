@@ -9,7 +9,8 @@ async function bootstrap() {
     const config = app.get(ConfigService);
 
     app.useGlobalPipes(new ValidationPipe({
-        whitelist: true, 
+        whitelist: true,
+        forbidNonWhitelisted: true,
         transform: true,
     }));
 
